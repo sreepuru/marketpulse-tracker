@@ -1,5 +1,6 @@
 import json
 import time
+from datetime import datetime
 from pathlib import Path
 
 import requests
@@ -84,9 +85,12 @@ def fetch_data(session, url):
 # Save JSON
 # ==========================================================
 
-def save_json(data):
+def save_json(output):
 
-    OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
+    OUTPUT_FOLDER.mkdir(
+        parents=True,
+        exist_ok=True
+    )
 
     with open(
         OUTPUT_FILE,
@@ -95,7 +99,7 @@ def save_json(data):
     ) as file:
 
         json.dump(
-            data,
+            output,
             file,
             indent=4,
             ensure_ascii=False
@@ -118,21 +122,64 @@ def main():
 
         session = create_session()
 
-        equity_records = fetch_data(session, EQUITY_API)
+        equity_records = fetch_data(
+            session,
+            EQUITY_API
+        )
 
-        sme_records = fetch_data(session, SME_API)
+        sme_records = fetch_data(
+            session,
+            SME_API
+        )
 
         print("\n=======================================")
 
-        print("Equity Records :", len(equity_records))
+        print(
+            "Equity Records :",
+            len(equity_records)
+        )
 
-        print("SME Records    :", len(sme_records))
+        print(
+            "SME Records    :",
+            len(sme_records)
+        )
 
         merged = equity_records + sme_records
 
-        print("Merged Records :", len(merged))
+        print(
+            "Merged Records :",
+            len(merged)
+        )
 
-        save_json(merged)
+        # ==================================================
+        # Create Output Object
+        # ==================================================
+
+        output = {
+
+            "lastUpdated":
+                datetime.now().strftime(
+                    "%d-%b-%Y %I:%M:%S %p"
+                ),
+
+            "recordCount":
+                len(merged),
+
+            "equityCount":
+                len(equity_records),
+
+            "smeCount":
+                len(sme_records),
+
+            "source":
+                "NSE",
+
+            "data":
+                merged
+
+        }
+
+        save_json(output)
 
         print("\nCompleted Successfully")
 
@@ -159,7 +206,6 @@ def main():
         print("\nUnexpected Error")
 
         print(err)
-
 
 # ==========================================================
 # Start

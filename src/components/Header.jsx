@@ -1,72 +1,111 @@
 import { useEffect, useState } from "react";
 
-function Header() {
+function Header({ activeTab, setActiveTab }) {
 
-    const [lastUpdated, setLastUpdated] = useState("");
+    const [currentTime, setCurrentTime] = useState("");
 
     useEffect(() => {
 
-        updateTime();
+        const updateCurrentTime = () => {
 
-        const timer = setInterval(updateTime, 1000);
+            const now = new Date();
+
+            setCurrentTime(
+                now.toLocaleTimeString("en-IN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true
+                })
+            );
+
+        };
+
+        updateCurrentTime();
+
+        const timer = setInterval(
+            updateCurrentTime,
+            60000
+        );
 
         return () => clearInterval(timer);
 
     }, []);
 
-    function updateTime() {
-
-        const now = new Date();
-
-        const formatted = now.toLocaleString("en-IN", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: true
-        });
-
-        setLastUpdated(formatted);
-
-    }
+    const tabs = [
+        "Dividend Tracker",
+        "Corporate Actions",
+        "Market",
+        "Watchlist",
+        "Alerts"
+    ];
 
     return (
 
         <header className="header">
 
-            <div className="header-left">
+            {/* Top Header */}
 
-                <h1>
-                    📈 MarketPulse
-                </h1>
+            <div className="header-top">
 
-                <h3>
-                    NSE Dividend Tracker
-                </h3>
+                <div className="brand">
+
+                    <div className="brand-title">
+                        📈 MarketPulse
+                    </div>
+
+                    <div className="brand-subtitle">
+                        Market Intelligence Platform
+                    </div>
+
+                </div>
+
+
+                <div className="live-section">
+
+                    <span className="live-dot">
+                        ●
+                    </span>
+
+                    <span className="live-text">
+                        LIVE
+                    </span>
+
+                    <span className="current-time">
+                        {currentTime}
+                    </span>
+
+                </div>
 
             </div>
 
-            <div className="header-right">
 
-                <div className="status">
+            {/* Navigation */}
 
-                    🟢 LIVE
+            <div className="navigation-wrapper">
 
-                </div>
+                <nav className="navigation-tabs">
 
-                <div className="updated">
+                    {tabs.map((tab) => (
 
-                    Last Updated
+                        <button
+                            key={tab}
+                            className={
+                                activeTab === tab
+                                    ? "nav-tab active"
+                                    : "nav-tab"
+                            }
+                            onClick={() =>
+                                setActiveTab(tab)
+                            }
+                        >
 
-                </div>
+                            {tab}
 
-                <div className="time">
+                        </button>
 
-                    {lastUpdated}
+                    ))}
 
-                </div>
+                </nav>
 
             </div>
 

@@ -28,85 +28,155 @@ body{
     flex-direction:column;
 
 }
+/* ==========================================================
+   MARKETPULSE HEADER
+   ========================================================== */
 
-/* ==========================================
-                HEADER
-========================================== */
-
-.header{
-
-    background:linear-gradient(135deg,#1E3A8A,#2563EB);
-
-    color:white;
-
-    padding:20px 40px;
-
-    display:flex;
-
-    justify-content:space-between;
-
-    align-items:center;
-
-    box-shadow:0 4px 10px rgba(0,0,0,.15);
-
+.header {
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
 }
 
-.header-left h1{
+/* Top section */
 
-    font-size:34px;
+.header-top {
+    min-height: 72px;
 
-    margin-bottom:5px;
+    padding: 0 28px;
 
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
 }
 
-.header-left h3{
+/* Brand */
 
-    font-weight:400;
+.brand-title {
+    font-size: 25px;
 
-    color:#dbeafe;
+    font-weight: 700;
 
+    color: #0f172a;
 }
 
-.header-right{
+.brand-subtitle {
+    margin-top: 3px;
 
-    text-align:right;
+    font-size: 12px;
 
+    color: #64748b;
+
+    letter-spacing: 0.2px;
 }
 
-.status{
+/* Live section */
 
-    background:#22c55e;
+.live-section {
+    display: flex;
 
-    display:inline-block;
+    align-items: center;
 
-    color:white;
+    gap: 7px;
 
-    padding:6px 14px;
+    font-size: 12px;
 
-    border-radius:20px;
+    font-weight: 600;
 
-    font-weight:bold;
-
-    margin-bottom:10px;
-
+    color: #475569;
 }
 
-.updated{
+.live-dot {
+    color: #16a34a;
 
-    font-size:13px;
-
-    color:#dbeafe;
-
+    font-size: 11px;
 }
 
-.time{
+.live-text {
+    color: #15803d;
 
-    margin-top:4px;
+    font-weight: 700;
+}
 
-    font-size:18px;
+.current-time {
+    margin-left: 6px;
 
-    font-weight:bold;
+    font-size: 15px;
 
+    font-weight: 700;
+
+    color: #0f172a;
+}
+
+/* Navigation */
+
+.navigation-wrapper {
+    padding: 0 28px;
+
+    border-top: 1px solid #f1f5f9;
+}
+
+.navigation-tabs {
+    display: flex;
+
+    align-items: center;
+
+    gap: 4px;
+}
+
+/* Navigation buttons */
+
+.nav-tab {
+    position: relative;
+
+    border: none;
+
+    background: transparent;
+
+    padding: 14px 18px;
+
+    font-size: 13px;
+
+    font-weight: 500;
+
+    color: #64748b;
+
+    cursor: pointer;
+
+    transition: all 0.2s ease;
+}
+
+.nav-tab:hover {
+    color: #0f172a;
+
+    background: #f8fafc;
+}
+
+/* Active tab */
+
+.nav-tab.active {
+    color: #1d4ed8;
+
+    font-weight: 700;
+}
+
+.nav-tab.active::after {
+    content: "";
+
+    position: absolute;
+
+    left: 14px;
+
+    right: 14px;
+
+    bottom: 0;
+
+    height: 3px;
+
+    background: #2563eb;
+
+    border-radius: 3px 3px 0 0;
 }
 
 /* ==========================================
@@ -524,5 +594,164 @@ tbody tr:nth-child(even):hover{
     text-align:center;
 
     padding:25px;
+
+}
+
+/* ==========================================================
+   KPI DASHBOARD
+   ========================================================== */
+
+.summary-container {
+
+    display: grid;
+
+    grid-template-columns: repeat(6, 1fr);
+
+    gap: 18px;
+
+    margin-bottom: 24px;
+
+}
+
+
+/* KPI Card */
+
+.kpi-card {
+
+    background: #ffffff;
+
+    border-radius: 14px;
+
+    padding: 24px;
+
+    min-height: 135px;
+
+    box-sizing: border-box;
+
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+    border-top: 4px solid #2563eb;
+
+}
+
+
+/* Card titles */
+
+.kpi-title {
+
+    font-size: 16px;
+
+    color: #64748b;
+
+    font-weight: 500;
+
+}
+
+
+/* Card values */
+
+.kpi-value {
+
+    margin-top: 20px;
+
+    font-size: 42px;
+
+    line-height: 1;
+
+    font-weight: 700;
+
+    color: #4563dc;
+
+}
+
+
+/* Last Updated label */
+
+.kpi-subtitle {
+
+    margin-top: 14px;
+
+    font-size: 12px;
+
+    color: #64748b;
+
+}
+
+
+/* Last Updated timestamp */
+
+.kpi-subtitle-value {
+
+    margin-top: 3px;
+
+    font-size: 13px;
+
+    font-weight: 500;
+
+    color: #334155;
+
+    white-space: nowrap;
+
+}
+
+
+/* Individual card borders */
+
+.total-card {
+    border-top-color: #2563eb;
+}
+
+.equity-card {
+    border-top-color: #16a34a;
+}
+
+.sme-card {
+    border-top-color: #9333ea;
+}
+
+.dividend-card {
+    border-top-color: #059669;
+}
+
+.bonus-card {
+    border-top-color: #ea580c;
+}
+
+.board-card {
+    border-top-color: #dc2626;
+}
+
+
+/* Responsive */
+
+@media (max-width: 1200px) {
+
+    .summary-container {
+
+        grid-template-columns: repeat(3, 1fr);
+
+    }
+
+}
+
+
+@media (max-width: 700px) {
+
+    .summary-container {
+
+        grid-template-columns: repeat(2, 1fr);
+
+    }
+
+}
+
+
+@media (max-width: 450px) {
+
+    .summary-container {
+
+        grid-template-columns: 1fr;
+
+    }
 
 }

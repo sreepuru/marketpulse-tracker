@@ -1,92 +1,90 @@
 // ==========================================================
 // MarketPulse - NSE Dividend Tracker
-// Service Layer
+// Announcement Service
 // ==========================================================
 
 const JSON_FILE = "/corporate-actions.json";
 
-/**
- * Load Corporate Actions JSON
- */
+
+// ==========================================================
+// Get Announcements
+// ==========================================================
+
 export async function getAnnouncements() {
 
-    try {
+    // Add timestamp to ensure the latest JSON is requested
+    const url = `${JSON_FILE}?t=${Date.now()}`;
 
-        const response = await fetch(JSON_FILE, {
-            cache: "no-store"
-        });
+    const response = await fetch(url, {
+        cache: "no-store"
+    });
 
-        if (!response.ok) {
+    if (!response.ok) {
 
-            throw new Error(
-                `Unable to load ${JSON_FILE} (${response.status})`
-            );
-
-        }
-
-        const data = await response.json();
-
-        return data;
+        throw new Error(
+            "Unable to load corporate-actions.json"
+        );
 
     }
-    catch (error) {
 
-        console.error("Error loading Corporate Actions");
+    const json = await response.json();
 
-        console.error(error);
+    console.log("MarketPulse JSON:", json);
 
-        throw error;
+    return {
 
-    }
+        rows: Array.isArray(json.data)
+            ? json.data
+            : [],
+
+        lastUpdated: json.lastUpdated || "",
+
+        recordCount: json.recordCount || 0,
+
+        equityCount: json.equityCount || 0,
+
+        smeCount: json.smeCount || 0,
+
+        source: json.source || "NSE"
+
+    };
 
 }
 
-/**
- * Dashboard Statistics
- */
+
+// ==========================================================
+// Summary
+// ==========================================================
+
 export function getSummary(rows) {
-
-    if (!rows || rows.length === 0) {
-
-        return {
-
-            total: 0,
-            dividend: 0,
-            bonus: 0,
-            split: 0,
-            boardMeeting: 0
-
-        };
-
-    }
-
-    const dividend = rows.filter(r =>
-        r.subject?.toLowerCase().includes("dividend")
-    ).length;
-
-    const bonus = rows.filter(r =>
-        r.subject?.toLowerCase().includes("bonus")
-    ).length;
-
-    const split = rows.filter(r =>
-        r.subject?.toLowerCase().includes("split")
-    ).length;
-
-    const boardMeeting = rows.filter(r =>
-        r.subject?.toLowerCase().includes("board")
-    ).length;
 
     return {
 
         total: rows.length,
 
-        dividend,
+        dividend: rows.filter(row =>
+            (row.subject || "")
+                .toLowerCase()
+                .includes("dividend")
+        ).length,
 
-        bonus,
+        bonus: rows.filter(row =>
+            (row.subject || "")
+                .toLowerCase()
+                .includes("bonus")
+        ).length,
 
-        split,
+        split: rows.filter(row =>
+            (row.subject || "")
+                .toLowerCase()
+                .includes("split")
+        ).length,
 
-        boardMeeting
+        boardMeeting: rows.filter(row =>
+            (row.subject || "")
+                .toLowerCase()
+                .includes("board")
+        ).length
 
     };
 

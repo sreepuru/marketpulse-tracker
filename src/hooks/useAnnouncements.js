@@ -5,6 +5,7 @@ import {
     getSummary
 } from "../services/announcementService";
 
+
 export function useAnnouncements() {
 
     const [rows, setRows] = useState([]);
@@ -19,9 +20,20 @@ export function useAnnouncements() {
 
     });
 
+    const [lastUpdated, setLastUpdated] = useState("");
+
+    const [recordCount, setRecordCount] = useState(0);
+
+    const [equityCount, setEquityCount] = useState(0);
+
+    const [smeCount, setSmeCount] = useState(0);
+
+    const [source, setSource] = useState("");
+
     const [loading, setLoading] = useState(true);
 
     const [error, setError] = useState("");
+
 
     async function loadData() {
 
@@ -29,11 +41,35 @@ export function useAnnouncements() {
 
             setLoading(true);
 
-            const data = await getAnnouncements();
+            const result = await getAnnouncements();
 
-            setRows(data);
+            console.log("MarketPulse Result:", result);
 
-            setSummary(getSummary(data));
+            setRows(result.rows);
+
+            setSummary(
+                getSummary(result.rows)
+            );
+
+            setLastUpdated(
+                result.lastUpdated
+            );
+
+            setRecordCount(
+                result.recordCount
+            );
+
+            setEquityCount(
+                result.equityCount
+            );
+
+            setSmeCount(
+                result.smeCount
+            );
+
+            setSource(
+                result.source
+            );
 
             setError("");
 
@@ -53,32 +89,36 @@ export function useAnnouncements() {
 
     }
 
+
     function reload() {
 
         loadData();
 
     }
 
+
     useEffect(() => {
 
         loadData();
 
-        // Auto Refresh every 60 Seconds
-        const interval = setInterval(() => {
-
-            loadData();
-
-        }, 60000);
-
-        return () => clearInterval(interval);
-
     }, []);
+
 
     return {
 
         rows,
 
         summary,
+
+        lastUpdated,
+
+        recordCount,
+
+        equityCount,
+
+        smeCount,
+
+        source,
 
         loading,
 

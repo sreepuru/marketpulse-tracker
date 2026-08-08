@@ -1,12 +1,11 @@
 import { useMemo, useState } from "react";
 
 function AnnouncementTable({
-
     rows,
     loading,
     error,
-    searchText
-
+    searchText,
+    lastUpdated
 }) {
 
     const [sortField, setSortField] = useState("exDate");
@@ -81,7 +80,12 @@ function AnnouncementTable({
 
         return data;
 
-    }, [rows, searchText, sortField, sortDirection]);
+    }, [
+        rows,
+        searchText,
+        sortField,
+        sortDirection
+    ]);
 
     if (loading) {
 
@@ -90,9 +94,7 @@ function AnnouncementTable({
             <div className="table-container">
 
                 <h2 style={{ padding: "30px" }}>
-
                     Loading Corporate Actions...
-
                 </h2>
 
             </div>
@@ -107,10 +109,13 @@ function AnnouncementTable({
 
             <div className="table-container">
 
-                <h2 style={{ padding: "30px", color: "red" }}>
-
+                <h2
+                    style={{
+                        padding: "30px",
+                        color: "red"
+                    }}
+                >
                     {error}
-
                 </h2>
 
             </div>
@@ -123,23 +128,26 @@ function AnnouncementTable({
 
         <>
 
+            {/* Table Information */}
+
             <div className="table-info">
 
-                Showing
+                <div className="record-count">
 
-                <strong>
+                     Showing{" "}
 
-                    {" "}
+                     <strong>
+                         {filteredRows.length}
+                     </strong>{" "}
 
-                    {filteredRows.length}
+                     records
 
-                    {" "}
-
-                </strong>
-
-                Records
+                </div>
 
             </div>
+
+
+            {/* Table */}
 
             <div className="table-container">
 
@@ -149,46 +157,48 @@ function AnnouncementTable({
 
                         <tr>
 
-                            <th onClick={() => handleSort("symbol")}>
-
+                            <th
+                                onClick={() =>
+                                    handleSort("symbol")
+                                }
+                            >
                                 Symbol ▲▼
-
                             </th>
 
-                            <th onClick={() => handleSort("comp")}>
-
+                            <th
+                                onClick={() =>
+                                    handleSort("comp")
+                                }
+                            >
                                 Company ▲▼
-
                             </th>
 
                             <th>
-
                                 Subject
-
                             </th>
 
-                            <th onClick={() => handleSort("exDate")}>
-
+                            <th
+                                onClick={() =>
+                                    handleSort("exDate")
+                                }
+                            >
                                 Ex Date ▲▼
-
                             </th>
 
-                            <th onClick={() => handleSort("recDate")}>
-
+                            <th
+                                onClick={() =>
+                                    handleSort("recDate")
+                                }
+                            >
                                 Record Date ▲▼
-
                             </th>
 
                             <th>
-
                                 Face Value
-
                             </th>
 
                             <th>
-
                                 Series
-
                             </th>
 
                         </tr>
@@ -197,109 +207,84 @@ function AnnouncementTable({
 
                     <tbody>
 
-                        {
+                        {filteredRows.length === 0 ? (
 
-                            filteredRows.length === 0 ?
+                            <tr>
 
-                                (
+                                <td
+                                    colSpan="7"
+                                    className="no-data"
+                                >
+                                    No Records Found
+                                </td>
 
-                                    <tr>
+                            </tr>
 
-                                        <td
+                        ) : (
 
-                                            colSpan="7"
+                            filteredRows.map((item, index) => (
 
-                                            className="no-data"
+                                <tr key={index}>
 
+                                    <td>
+
+                                        <strong>
+                                            {item.symbol}
+                                        </strong>
+
+                                    </td>
+
+                                    <td>
+                                        {item.comp}
+                                    </td>
+
+                                    <td>
+
+                                        <span
+                                            className={
+                                                item.subject
+                                                    ?.toLowerCase()
+                                                    .includes("dividend")
+
+                                                    ? "badge dividend"
+
+                                                    : item.subject
+                                                        ?.toLowerCase()
+                                                        .includes("bonus")
+
+                                                        ? "badge bonus"
+
+                                                        : "badge default"
+                                            }
                                         >
 
-                                            No Records Found
+                                            {item.subject}
 
-                                        </td>
+                                        </span>
 
-                                    </tr>
+                                    </td>
 
-                                )
+                                    <td>
+                                        {item.exDate || "-"}
+                                    </td>
 
-                                :
+                                    <td>
+                                        {item.recDate || "-"}
+                                    </td>
 
-                                (
+                                    <td>
+                                        {item.faceVal || "-"}
+                                    </td>
 
-                                    filteredRows.map((item, index) => (
+                                    <td>
+                                        {item.series || "-"}
+                                    </td>
 
-                                        <tr key={index}>
+                                </tr>
 
-                                            <td>
+                            ))
 
-                                                <strong>
-
-                                                    {item.symbol}
-
-                                                </strong>
-
-                                            </td>
-
-                                            <td>
-
-                                                {item.comp}
-
-                                            </td>
-
-                                            <td>
-
-                                                <span
-                                                    className={
-
-                                                        item.subject?.toLowerCase().includes("dividend")
-
-                                                            ? "badge dividend"
-
-                                                            : item.subject?.toLowerCase().includes("bonus")
-
-                                                                ? "badge bonus"
-
-                                                                : "badge default"
-
-                                                    }
-                                                >
-
-                                                    {item.subject}
-
-                                                </span>
-
-                                            </td>
-
-                                            <td>
-
-                                                {item.exDate || "-"}
-
-                                            </td>
-
-                                            <td>
-
-                                                {item.recDate || "-"}
-
-                                            </td>
-
-                                            <td>
-
-                                                {item.faceVal || "-"}
-
-                                            </td>
-
-                                            <td>
-
-                                                {item.series || "-"}
-
-                                            </td>
-
-                                        </tr>
-
-                                    ))
-
-                                )
-
-                        }
+                        )}
 
                     </tbody>
 

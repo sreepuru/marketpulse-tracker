@@ -9,32 +9,75 @@ import Footer from "./components/Footer";
 
 import { useAnnouncements } from "./hooks/useAnnouncements";
 
+
 function App() {
 
-    const {rows, summary, loading, error, reload} = useAnnouncements();
+    const {
+
+        rows,
+
+        summary,
+
+        lastUpdated,
+
+        equityCount,
+
+        smeCount,
+
+        loading,
+
+        error,
+
+        reload
+
+    } = useAnnouncements();
+
 
     const [searchText, setSearchText] = useState("");
 
+
     return (
+
         <div className="app">
 
             <Header />
 
             <main className="dashboard">
 
-                <SummaryCards summary={summary} />
+                <SummaryCards
 
-                <SearchBar
-                    searchText={searchText}
-                    setSearchText={setSearchText}
-                    reload={reload}
+                    summary={summary}
+
+                    equityCount={equityCount}
+
+                    smeCount={smeCount}
+
+                    lastUpdated={lastUpdated}
+
                 />
 
-                <AnnouncementTable
-                    rows={rows}
-                    loading={loading}
-                    error={error}
+
+                <SearchBar
+
                     searchText={searchText}
+
+                    setSearchText={setSearchText}
+
+                    reload={reload}
+
+                />
+
+
+                <AnnouncementTable
+
+                    rows={rows}
+
+                    loading={loading}
+
+                    error={error}
+
+                    searchText={searchText}
+
                 />
 
             </main>
@@ -42,8 +85,10 @@ function App() {
             <Footer />
 
         </div>
+
     );
 
 }
+
 
 export default App;
