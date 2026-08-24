@@ -145,6 +145,15 @@ def main():
         )
 
         merged = equity_records + sme_records
+        
+        if not isinstance(equity_records, list):
+            raise ValueError("NSE Equity response is not a list.")
+
+        if not isinstance(sme_records, list):
+            raise ValueError("NSE SME response is not a list.")
+
+        if len(merged) == 0:
+            raise ValueError("NSE returned zero corporate-action records.")
 
         print(
             "Merged Records :",
@@ -184,33 +193,31 @@ def main():
         print("\nCompleted Successfully")
 
     except requests.exceptions.HTTPError as err:
-
         print("\nHTTP Error")
-
         print(err)
+        return False
 
     except requests.exceptions.ConnectionError as err:
-
         print("\nConnection Error")
-
         print(err)
+        return False
 
     except requests.exceptions.Timeout as err:
-
         print("\nTimeout")
-
         print(err)
+        return False
 
     except Exception as err:
-
         print("\nUnexpected Error")
-
         print(err)
+        return False
+
+    return True
 
 # ==========================================================
 # Start
 # ==========================================================
 
 if __name__ == "__main__":
-
-    main()
+    success = main()
+    raise SystemExit(0 if success else 1)

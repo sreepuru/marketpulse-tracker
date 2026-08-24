@@ -1,9 +1,9 @@
 // ==========================================================
-// MarketPulse - NSE Dividend Tracker
+// MarketPulse - NSE Corporate Actions
 // Announcement Service
 // ==========================================================
 
-const JSON_FILE = "/corporate-actions.json";
+import { API_BASE_URL } from "../config";
 
 
 // ==========================================================
@@ -12,40 +12,63 @@ const JSON_FILE = "/corporate-actions.json";
 
 export async function getAnnouncements() {
 
-    // Add timestamp to ensure the latest JSON is requested
-    const url = `${JSON_FILE}?t=${Date.now()}`;
-
-    const response = await fetch(url, {
-        cache: "no-store"
-    });
+    const response = await fetch(
+        `${API_BASE_URL}/api/corporate-actions`,
+        {
+            cache: "no-store"
+        }
+    );
 
     if (!response.ok) {
 
         throw new Error(
-            "Unable to load corporate-actions.json"
+            `Unable to load corporate actions: ${response.status}`
         );
 
     }
 
     const json = await response.json();
 
-    console.log("MarketPulse JSON:", json);
+    console.log(
+        "MarketPulse Corporate Actions API:",
+        json
+    );
+
+    /*
+     * API returns an array of corporate-action records.
+     *
+     * Keep the service response compatible with the
+     * existing frontend structure.
+     */
+
+    const rows = Array.isArray(json)
+        ? json
+        : Array.isArray(json.data)
+            ? json.data
+            : [];
 
     return {
 
-        rows: Array.isArray(json.data)
-            ? json.data
-            : [],
+        rows,
 
-        lastUpdated: json.lastUpdated || "",
+        lastUpdated:
+            rows.length > 0
+                ? (
+                    rows
+                        .map(row =>
+                            row.updated_at ||
+                            row.record_received_date ||
+                            row.created_at
+                        )
+                        .filter(Boolean)
+                        .sort()
+                        .at(-1) || ""
+                )
+                : "",
 
-        recordCount: json.recordCount || 0,
+        recordCount: rows.length,
 
-        equityCount: json.equityCount || 0,
-
-        smeCount: json.smeCount || 0,
-
-        source: json.source || "NSE"
+        source: "NSE"
 
     };
 
@@ -63,27 +86,28 @@ export function getSummary(rows) {
         total: rows.length,
 
         dividend: rows.filter(row =>
-            (row.subject || "")
-                .toLowerCase()
-                .includes("dividend")
+            String(row.action_type || "")
+                .toUpperCase() === "DIVIDEND"
         ).length,
 
         bonus: rows.filter(row =>
-            (row.subject || "")
-                .toLowerCase()
-                .includes("bonus")
+            String(row.action_type || "")
+                .toUpperCase() === "BONUS"
         ).length,
 
-        split: rows.filter(row =>
-            (row.subject || "")
-                .toLowerCase()
-                .includes("split")
+        rights: rows.filter(row =>
+            String(row.action_type || "")
+                .toUpperCase() === "RIGHTS"
+        ).length,
+
+        buyback: rows.filter(row =>
+            String(row.action_type || "")
+                .toUpperCase() === "BUYBACK"
         ).length,
 
         boardMeeting: rows.filter(row =>
-            (row.subject || "")
-                .toLowerCase()
-                .includes("board")
+            String(row.action_type || "")
+                .toUpperCase() === "BOARD_MEETING"
         ).length
 
     };

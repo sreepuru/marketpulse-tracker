@@ -1,1 +1,7 @@
+# MarketPulse backend production/runtime dependencies
+fastapi
+uvicorn[standard]
+psycopg[binary]
+pandas
 requests
+selenium
