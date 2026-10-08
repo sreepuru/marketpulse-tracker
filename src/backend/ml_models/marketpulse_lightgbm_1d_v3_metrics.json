@@ -1,0 +1,194 @@
+{
+  "model": "LightGBM",
+  "model_version": "MarketPulse-LightGBM-1D-v3",
+  "horizon_trading_days": 1,
+  "target": "direction_1d",
+  "return_column": "forward_return_1d",
+  "label_flag": "has_1d_label",
+  "split_type": "calendar_date",
+  "cutoff_date": "2026-05-28",
+  "rows_loaded": 522251,
+  "training_rows": 418979,
+  "testing_rows": 103272,
+  "train_start": "2025-01-01",
+  "train_end": "2026-05-27",
+  "test_start": "2026-05-28",
+  "test_end": "2026-09-01",
+  "feature_count": 64,
+  "categorical_feature_count": 6,
+  "features": [
+    "feed_category",
+    "market_news_category",
+    "ai_event_type",
+    "ai_event_status",
+    "ai_sentiment",
+    "publication_hour",
+    "publication_minute",
+    "publication_weekday",
+    "is_pre_market",
+    "is_post_market",
+    "close",
+    "open",
+    "high",
+    "low",
+    "volume",
+    "turnover",
+    "daily_return",
+    "rsi_14",
+    "macd",
+    "macd_signal",
+    "macd_hist",
+    "bb_position_20",
+    "sma_5",
+    "sma_10",
+    "sma_20",
+    "ema_5",
+    "ema_10",
+    "ema_20",
+    "atr_14",
+    "volatility_20d",
+    "relative_volume_20",
+    "close_vs_sma20",
+    "volume_ratio_5d",
+    "range_pct",
+    "momentum_5d",
+    "momentum_10d",
+    "momentum_20d",
+    "return_mean_5d",
+    "return_std_5d",
+    "return_mean_10d",
+    "return_std_10d",
+    "return_mean_20d",
+    "return_std_20d",
+    "volatility_mean_5d",
+    "volatility_mean_10d",
+    "volatility_mean_20d",
+    "volume_ratio_mean_5d",
+    "volume_ratio_mean_10d",
+    "volume_ratio_mean_20d",
+    "volume_mean_5d",
+    "volume_mean_20d",
+    "high_20d",
+    "low_20d",
+    "distance_from_high_20d",
+    "distance_from_low_20d",
+    "max_drawdown_20d",
+    "price_trend_20d",
+    "volume_trend_20d",
+    "sequence_rows",
+    "sequence_length",
+    "backward_return_1d",
+    "backward_return_5d",
+    "backward_return_10d",
+    "exchange"
+  ],
+  "backward_features": [
+    "backward_return_1d",
+    "backward_return_5d",
+    "backward_return_10d"
+  ],
+  "leakage_exclusions": [
+    "news_id",
+    "security_id",
+    "event_trade_date",
+    "published_at",
+    "prediction_cutoff_ts",
+    "cutoff_trade_date",
+    "created_at",
+    "updated_at",
+    "forward_return_1d",
+    "forward_return_3d",
+    "forward_return_5d",
+    "forward_return_10d",
+    "direction_1d",
+    "direction_3d",
+    "direction_5d",
+    "direction_10d",
+    "has_1d_label",
+    "has_3d_label",
+    "has_5d_label",
+    "has_10d_label",
+    "prediction_eligible"
+  ],
+  "target_distribution": {
+    "train": {
+      "NEGATIVE": 166253,
+      "NEUTRAL": 107701,
+      "POSITIVE": 145025
+    },
+    "test": {
+      "NEGATIVE": 40606,
+      "NEUTRAL": 28543,
+      "POSITIVE": 34123
+    }
+  },
+  "majority_baseline": {
+    "class": "NEGATIVE",
+    "accuracy": 0.3931946703850027,
+    "balanced_accuracy": 0.3333333333333333,
+    "macro_f1": 0.18815014572531355
+  },
+  "lightgbm": {
+    "accuracy": 0.4219633588968936,
+    "balanced_accuracy": 0.40371005041034813,
+    "macro_f1": 0.3964091856842986,
+    "classification_report": {
+      "NEGATIVE": {
+        "precision": 0.43564777775886426,
+        "recall": 0.6302763138452445,
+        "f1-score": 0.5151933006552394,
+        "support": 40606.0
+      },
+      "NEUTRAL": {
+        "precision": 0.41725148796304523,
+        "recall": 0.3291174718845251,
+        "f1-score": 0.36798088410991636,
+        "support": 28543.0
+      },
+      "POSITIVE": {
+        "precision": 0.3902594157466721,
+        "recall": 0.2517363655012748,
+        "f1-score": 0.30605337228774004,
+        "support": 34123.0
+      },
+      "accuracy": 0.4219633588968936,
+      "macro avg": {
+        "precision": 0.41438622715619383,
+        "recall": 0.40371005041034813,
+        "f1-score": 0.3964091856842986,
+        "support": 103272.0
+      },
+      "weighted avg": {
+        "precision": 0.41556612565002454,
+        "recall": 0.4219633588968936,
+        "f1-score": 0.40540201375136087,
+        "support": 103272.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        25593,
+        6942,
+        8071
+      ],
+      [
+        13799,
+        9394,
+        5350
+      ],
+      [
+        19355,
+        6178,
+        8590
+      ]
+    ],
+    "classes": [
+      "NEGATIVE",
+      "NEUTRAL",
+      "POSITIVE"
+    ],
+    "negative_probability_mean": 0.3884906404863759,
+    "neutral_probability_mean": 0.28018190687294203,
+    "positive_probability_mean": 0.33132745264068214
+  }
+}

@@ -2,10 +2,12 @@ import os
 from dotenv import load_dotenv
 import sys
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pandas as pd
 import psycopg
+import requests
+import zipfile
 
 load_dotenv()
 
@@ -23,12 +25,33 @@ DB_CONFIG = {
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-DEFAULT_CSV = (
+BHAVCOPY_DIR = (
     PROJECT_ROOT
     / "data"
     / "bhavcopy"
-    / "test_20260529.csv"
 )
+
+DEFAULT_CSV = BHAVCOPY_DIR / "test_20260529.csv"
+
+HISTORICAL_DIR = (
+    BHAVCOPY_DIR
+    / "historical"
+)
+
+NSE_HISTORICAL_URL = (
+    "https://nsearchives.nseindia.com/content/cm/"
+    "BhavCopy_NSE_CM_0_0_0_{date}_F_0000.csv.zip"
+)
+
+DOWNLOAD_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/139.0 Safari/537.36"
+    ),
+    "Accept": "application/zip,application/octet-stream,*/*",
+    "Referer": "https://www.nseindia.com/",
+}
 
 
 # ==========================================================
@@ -349,22 +372,160 @@ def insert_daily_price(
 
 
 # ==========================================================
-# Main ingestion
+# Historical file discovery
 # ==========================================================
 
-def main():
+DEFAULT_HISTORICAL_DIR = (
+    PROJECT_ROOT
+    / "data"
+    / "bhavcopy"
+    / "historical"
+)
 
-    csv_path = (
-        Path(sys.argv[1])
-        if len(sys.argv) > 1
-        else DEFAULT_CSV
+
+def discover_input_files(path):
+
+    path = Path(path)
+
+    if path.is_file():
+
+        return [
+            path
+        ]
+
+    if path.is_dir():
+
+        files = sorted(
+            p
+            for p in path.rglob("*")
+            if p.is_file()
+            and (
+                p.suffix.lower() == ".csv"
+                or p.suffix.lower() == ".zip"
+            )
+        )
+
+        if not files:
+
+            raise FileNotFoundError(
+                f"No CSV or ZIP files found under: {path}"
+            )
+
+        return files
+
+    raise FileNotFoundError(
+        f"Path not found: {path}"
     )
 
-    if not csv_path.exists():
 
-        raise FileNotFoundError(
-            f"CSV not found: {csv_path}"
+# ==========================================================
+# Extract ZIP
+# ==========================================================
+
+def extract_csv_from_zip(
+    zip_path
+):
+
+    import zipfile
+
+    zip_path = Path(zip_path)
+
+    extract_dir = (
+        zip_path.parent
+        / "extracted"
+    )
+
+    extract_dir.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    with zipfile.ZipFile(
+        zip_path,
+        "r"
+    ) as archive:
+
+        csv_names = [
+            name
+            for name in archive.namelist()
+            if name.lower().endswith(".csv")
+        ]
+
+        if not csv_names:
+
+            raise ValueError(
+                f"No CSV found inside: {zip_path}"
+            )
+
+        # The final Bhavcopy CSV is normally the primary/shortest path.
+        csv_name = sorted(
+            csv_names,
+            key=lambda name: (
+                name.count("/"),
+                len(name)
+            )
+        )[0]
+
+        csv_path = (
+            extract_dir
+            / Path(csv_name).name
         )
+
+        if not csv_path.exists():
+
+            with archive.open(
+                csv_name
+            ) as source_file:
+
+                csv_path.write_bytes(
+                    source_file.read()
+                )
+
+    return csv_path
+
+
+# ==========================================================
+# Resolve input to CSV
+# ==========================================================
+
+def resolve_csv(
+    path
+):
+
+    path = Path(path)
+
+    if path.suffix.lower() == ".csv":
+
+        return path
+
+    if path.suffix.lower() == ".zip":
+
+        return extract_csv_from_zip(
+            path
+        )
+
+    raise ValueError(
+        f"Unsupported input type: {path}"
+    )
+
+
+# ==========================================================
+# Ingest one CSV
+# ==========================================================
+
+def ingest_file(
+    conn,
+    csv_path
+):
+
+    print()
+    print("=" * 70)
+    print("Loading historical Bhavcopy")
+    print("=" * 70)
+    print(
+        "CSV:",
+        csv_path
+    )
 
     df = load_csv(
         csv_path
@@ -378,75 +539,73 @@ def main():
         df
     )
 
-    trade_dates = df[
-        "trade_date"
-    ].unique()
+    trade_dates = (
+        df["trade_date"]
+        .dropna()
+        .unique()
+    )
 
     if len(trade_dates) != 1:
 
         raise ValueError(
-            "Expected exactly one trading date, "
-            f"found: {trade_dates}"
+            f"Expected exactly one trade date in "
+            f"{csv_path.name}; found: {trade_dates}"
         )
 
     trade_date = trade_dates[0]
 
-    print()
     print(
-        "Processing trade date:",
+        "Trade date:",
         trade_date
     )
-
-    conn = get_connection()
 
     inserted_security_count = 0
     updated_security_count = 0
     inserted_price_count = 0
     duplicate_price_count = 0
 
-    try:
+    with conn.cursor() as cursor:
 
-        with conn.cursor() as cursor:
+        # --------------------------------------------------
+        # Record the ingestion run.
+        # --------------------------------------------------
 
-            # --------------------------------------------------
-            # Start ingestion record
-            # --------------------------------------------------
-
-            cursor.execute(
-                """
-                INSERT INTO bhavcopy_runs (
-                    trade_date,
-                    source_file,
-                    downloaded_at,
-                    total_rows,
-                    valid_rows,
-                    status
-                )
-                VALUES (
-                    %s,
-                    %s,
-                    CURRENT_TIMESTAMP,
-                    %s,
-                    %s,
-                    'RUNNING'
-                )
-                RETURNING run_id
-                """,
-                (
-                    trade_date,
-                    str(csv_path),
-                    len(df),
-                    len(df),
-                )
+        cursor.execute(
+            """
+            INSERT INTO bhavcopy_runs (
+                trade_date,
+                source_file,
+                downloaded_at,
+                total_rows,
+                valid_rows,
+                status
             )
+            VALUES (
+                %s,
+                %s,
+                CURRENT_TIMESTAMP,
+                %s,
+                %s,
+                'RUNNING'
+            )
+            RETURNING run_id
+            """,
+            (
+                trade_date,
+                str(csv_path),
+                len(df),
+                len(df),
+            )
+        )
 
-            run_id = cursor.fetchone()[0]
+        run_id = cursor.fetchone()[0]
 
-            # --------------------------------------------------
-            # Process rows
-            # --------------------------------------------------
+        try:
 
-            for index, row in df.iterrows():
+            for position, (_, row) in enumerate(
+                df.iterrows(),
+                start=1
+            ):
 
                 security_id, created = (
                     get_or_create_security(
@@ -477,17 +636,13 @@ def main():
 
                     duplicate_price_count += 1
 
-                if (
-                    (index + 1) % 500 == 0
-                ):
+                if position % 1000 == 0:
 
                     print(
-                        f"Processed {index + 1} / {len(df)}"
+                        f"Processed "
+                        f"{position:,} / "
+                        f"{len(df):,}"
                     )
-
-            # --------------------------------------------------
-            # Complete ingestion record
-            # --------------------------------------------------
 
             cursor.execute(
                 """
@@ -508,35 +663,22 @@ def main():
                 )
             )
 
-        conn.commit()
+            conn.commit()
 
-    except Exception as error:
+        except Exception as error:
 
-        conn.rollback()
+            conn.rollback()
 
-        print()
-        print(
-            "ERROR:",
-            error
-        )
+            print(
+                "Ingestion error:",
+                error
+            )
 
-        raise
-
-    finally:
-
-        conn.close()
-
-    # ----------------------------------------------------------
-    # Summary
-    # ----------------------------------------------------------
+            raise
 
     print()
-    print("=" * 70)
-    print("INGESTION SUCCESSFUL")
-    print("=" * 70)
-
     print(
-        "Trade date:",
+        "SUCCESS:",
         trade_date
     )
 
@@ -565,7 +707,251 @@ def main():
         duplicate_price_count
     )
 
+    return {
+        "trade_date": trade_date,
+        "source_rows": len(df),
+        "new_securities": inserted_security_count,
+        "updated_securities": updated_security_count,
+        "prices_inserted": inserted_price_count,
+        "duplicates": duplicate_price_count,
+    }
+
+
+# ==========================================================
+# Load all downloaded files
+# ==========================================================
+
+def load_downloaded_files(
+    input_path
+):
+
+    input_files = discover_input_files(
+        input_path
+    )
+
+    print()
     print("=" * 70)
+    print("MarketPulse Historical Bhavcopy DB Loader")
+    print("=" * 70)
+
+    print(
+        "Input:",
+        input_path
+    )
+
+    print(
+        "Files found:",
+        len(input_files)
+    )
+
+    print("=" * 70)
+
+    stats = {
+        "files_found": len(input_files),
+        "files_loaded": 0,
+        "files_failed": 0,
+        "source_rows": 0,
+        "new_securities": 0,
+        "updated_securities": 0,
+        "prices_inserted": 0,
+        "duplicate_prices": 0,
+    }
+
+    conn = get_connection()
+
+    try:
+
+        for index, input_file in enumerate(
+            input_files,
+            start=1
+        ):
+
+            print()
+            print(
+                f"[{index}/{len(input_files)}]"
+            )
+
+            print(
+                "Input file:",
+                input_file
+            )
+
+            try:
+
+                csv_path = resolve_csv(
+                    input_file
+                )
+
+                result = ingest_file(
+                    conn,
+                    csv_path
+                )
+
+                stats["files_loaded"] += 1
+                stats["source_rows"] += result[
+                    "source_rows"
+                ]
+                stats["new_securities"] += result[
+                    "new_securities"
+                ]
+                stats["updated_securities"] += result[
+                    "updated_securities"
+                ]
+                stats["prices_inserted"] += result[
+                    "prices_inserted"
+                ]
+                stats["duplicate_prices"] += result[
+                    "duplicates"
+                ]
+
+            except Exception as error:
+
+                stats["files_failed"] += 1
+
+                print()
+                print(
+                    "FAILED:",
+                    input_file
+                )
+
+                print(
+                    "Reason:",
+                    error
+                )
+
+                # The failed file is isolated. Continue with
+                # the remaining historical files.
+                continue
+
+    finally:
+
+        conn.close()
+
+    print()
+    print("=" * 70)
+    print("HISTORICAL DB LOAD COMPLETE")
+    print("=" * 70)
+
+    for key, value in stats.items():
+
+        print(
+            f"{key}:",
+            value
+        )
+
+    print("=" * 70)
+
+
+# ==========================================================
+# Main
+# ==========================================================
+
+def main():
+
+    args = sys.argv[1:]
+
+    # ------------------------------------------------------
+    # New explicit mode:
+    #
+    # python fetch_bhavcopy.py --load-directory
+    # python fetch_bhavcopy.py --load-directory <path>
+    #
+    # The default directory is:
+    # data/bhavcopy/historical
+    # ------------------------------------------------------
+
+    if not args:
+
+        input_path = (
+            DEFAULT_HISTORICAL_DIR
+        )
+
+        load_downloaded_files(
+            input_path
+        )
+
+        return
+
+    if args[0] == "--load-directory":
+
+        if len(args) > 2:
+
+            raise ValueError(
+                "Usage: "
+                "fetch_bhavcopy.py "
+                "--load-directory [PATH]"
+            )
+
+        input_path = (
+            Path(args[1])
+            if len(args) == 2
+            else DEFAULT_HISTORICAL_DIR
+        )
+
+        load_downloaded_files(
+            input_path
+        )
+
+        return
+
+    if args[0] == "--load-file":
+
+        if len(args) != 2:
+
+            raise ValueError(
+                "Usage: "
+                "fetch_bhavcopy.py "
+                "--load-file FILE"
+            )
+
+        input_path = Path(
+            args[1]
+        )
+
+        files = discover_input_files(
+            input_path
+        )
+
+        if len(files) != 1:
+
+            raise ValueError(
+                "--load-file expects exactly "
+                "one CSV or ZIP file."
+            )
+
+        conn = get_connection()
+
+        try:
+
+            csv_path = resolve_csv(
+                files[0]
+            )
+
+            ingest_file(
+                conn,
+                csv_path
+            )
+
+        finally:
+
+            conn.close()
+
+        return
+
+    # ------------------------------------------------------
+    # Backward compatibility:
+    #
+    # python fetch_bhavcopy.py file.csv
+    # python fetch_bhavcopy.py directory
+    # ------------------------------------------------------
+
+    input_path = Path(
+        args[0]
+    )
+
+    load_downloaded_files(
+        input_path
+    )
 
 
 # ==========================================================

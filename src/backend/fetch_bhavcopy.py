@@ -1,839 +1,1052 @@
 import os
+from dotenv import load_dotenv
 import sys
-import time
-import zipfile
+import requests
 from pathlib import Path
 from datetime import datetime
 
 import pandas as pd
+import psycopg
 
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-
+load_dotenv()
 
 # ==========================================================
 # Configuration
 # ==========================================================
 
+DB_CONFIG = {
+    "host": os.getenv("MARKETPULSE_DB_HOST", "localhost"),
+    "port": os.getenv("MARKETPULSE_DB_PORT", "5432"),
+    "dbname": os.getenv("MARKETPULSE_DB_NAME", "marketpulse"),
+    "user": os.getenv("MARKETPULSE_DB_USER", "postgres"),
+    "password": os.getenv("MARKETPULSE_DB_PASSWORD", ""),
+}
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-DOWNLOAD_FOLDER = (
+BHAVCOPY_DIR = (
     PROJECT_ROOT
     / "data"
     / "bhavcopy"
 )
 
-EXTRACT_FOLDER = (
-    DOWNLOAD_FOLDER
-    / "extracted"
-)
-
-NSE_REPORTS_URL = (
-    "https://www.nseindia.com/all-reports"
-)
-
-NSE_BHAVCOPY_BASE_URL = (
-    "https://nsearchives.nseindia.com/content/cm/"
-)
-
-
-# ==========================================================
-# Create folders
-# ==========================================================
-
-DOWNLOAD_FOLDER.mkdir(
-    parents=True,
-    exist_ok=True
-)
-
-EXTRACT_FOLDER.mkdir(
-    parents=True,
-    exist_ok=True
-)
-
-
-# ==========================================================
-# Get requested date
-# ==========================================================
-
-def get_requested_date():
-
-    if len(sys.argv) <= 1:
-        return None
-
-    requested_date = sys.argv[1].strip()
-
-    try:
-
-        datetime.strptime(
-            requested_date,
-            "%Y-%m-%d"
-        )
-
-    except ValueError:
-
-        raise ValueError(
-            "Date must be in YYYY-MM-DD format. "
-            "Example: 2026-06-23"
-        )
-
-    return requested_date
-
-
-# ==========================================================
-# Build historical Bhavcopy URL
-# ==========================================================
-
-def build_historical_bhavcopy_url(
-    date_string
-):
-
-    date_obj = datetime.strptime(
-        date_string,
-        "%Y-%m-%d"
-    )
-
-    date_part = date_obj.strftime(
-        "%Y%m%d"
-    )
-
-    filename = (
-        f"BhavCopy_NSE_CM_0_0_0_"
-        f"{date_part}_F_0000.csv.zip"
-    )
-
-    return (
-        NSE_BHAVCOPY_BASE_URL
-        + filename
-    )
-
-
-# ==========================================================
-# Create Selenium driver
-# ==========================================================
-
-def create_driver():
-
-    chrome_options = Options()
-
-    chrome_options.add_experimental_option(
-        "prefs",
-        {
-            "download.default_directory":
-                str(
-                    DOWNLOAD_FOLDER.resolve()
-                ),
-
-            "download.prompt_for_download":
-                False,
-
-            "download.directory_upgrade":
-                True,
-
-            "safebrowsing.enabled":
-                True
-        }
-    )
-
-    driver = webdriver.Chrome(
-        options=chrome_options
-    )
-
-    driver.set_page_load_timeout(
-        60
-    )
-
-    return driver
-
-
-# ==========================================================
-# Find latest Bhavcopy link
-# ==========================================================
-
-def find_bhavcopy_link(
-    driver
-):
-
-    print()
-    print(
-        "Opening NSE Reports page..."
-    )
-
-    print(
-        NSE_REPORTS_URL
-    )
-
-    driver.get(
-        NSE_REPORTS_URL
-    )
-
-    wait = WebDriverWait(
-        driver,
-        60
-    )
-
-    wait.until(
-        EC.presence_of_element_located(
-            (
-                By.TAG_NAME,
-                "body"
-            )
-        )
-    )
-
-    time.sleep(5)
-
-    print()
-    print(
-        "Searching for CM-UDiFF Bhavcopy..."
-    )
-
-    links = driver.find_elements(
-        By.TAG_NAME,
-        "a"
-    )
-
-    candidates = []
-
-    for link in links:
-
-        try:
-
-            href = link.get_attribute(
-                "href"
-            )
-
-            text = (
-                link.text or ""
-            ).strip()
-
-            if not href:
-                continue
-
-            href_lower = (
-                href.lower()
-            )
-
-            text_lower = (
-                text.lower()
-            )
-
-            if (
-                "bhavcopy_nse_cm"
-                in href_lower
-
-                and href_lower.endswith(
-                    ".zip"
-                )
-            ):
-
-                candidates.append(
-                    {
-                        "text": text,
-                        "href": href
-                    }
-                )
-
-            elif (
-                "udiiff common bhavcopy final"
-                in text_lower
-
-                and href_lower.endswith(
-                    ".zip"
-                )
-            ):
-
-                candidates.append(
-                    {
-                        "text": text,
-                        "href": href
-                    }
-                )
-
-        except Exception:
-
-            continue
-
-    # ------------------------------------------------------
-    # Remove duplicates
-    # ------------------------------------------------------
-
-    unique = {}
-
-    for item in candidates:
-
-        unique[
-            item["href"]
-        ] = item
-
-    candidates = list(
-        unique.values()
-    )
-
-    print()
-    print(
-        "Bhavcopy candidates found:",
-        len(candidates)
-    )
-
-    for item in candidates[:10]:
-
-        print()
-        print(
-            "Text :",
-            item["text"]
-        )
-
-        print(
-            "URL  :",
-            item["href"]
-        )
-
-    if not candidates:
-
-        raise RuntimeError(
-            "Could not find CM-UDiFF Bhavcopy "
-            "download link on NSE Reports page."
-        )
-
-    preferred = [
-
-        item
-
-        for item in candidates
-
-        if (
-            "bhavcopy_nse_cm"
-            in item["href"].lower()
-        )
-
-    ]
-
-    if preferred:
-
-        selected = preferred[0]
-
-    else:
-
-        selected = candidates[0]
-
-    print()
-    print(
-        "Selected Bhavcopy:"
-    )
-
-    print(
-        selected["href"]
-    )
-
-    return selected["href"]
-
-
-# ==========================================================
-# Download Bhavcopy
-# ==========================================================
-
-def download_bhavcopy(
-    driver,
-    href
-):
-
-    print()
-    print(
-        "Starting Bhavcopy download..."
-    )
-
-    # ------------------------------------------------------
-    # Capture files before download
-    # ------------------------------------------------------
-
-    before = {
-        file.resolve()
-
-        for file in DOWNLOAD_FOLDER.iterdir()
-
-        if file.is_file()
-    }
-
-    driver.get(
-        href
-    )
-
-    print(
-        "Waiting for download..."
-    )
-
-    timeout = 90
-
-    start_time = time.time()
-
-    downloaded_file = None
-
-    while (
-        time.time() - start_time
-        < timeout
-    ):
-
-        time.sleep(1)
-
-        current = {
-            file.resolve()
-
-            for file in DOWNLOAD_FOLDER.iterdir()
-
-            if file.is_file()
-        }
-
-        new_files = (
-            current - before
-        )
-
-        completed = [
-
-            file
-
-            for file in new_files
-
-            if not file.name.endswith(
-                ".crdownload"
-            )
-
-            and file.suffix.lower()
-            == ".zip"
-
-        ]
-
-        if completed:
-
-            downloaded_file = max(
-                completed,
-                key=lambda file:
-                    file.stat().st_mtime
-            )
-
-            break
-
-    if not downloaded_file:
-
-        raise RuntimeError(
-            "Bhavcopy download did not "
-            "complete within 90 seconds."
-        )
-
-    print()
-    print(
-        "Downloaded:",
-        downloaded_file
-    )
-
-    print(
-        "Size:",
-        round(
-            downloaded_file.stat().st_size
-            / 1024,
-            2
-        ),
-        "KB"
-    )
-
-    return downloaded_file
-
-
-# ==========================================================
-# Extract Bhavcopy
-# ==========================================================
-
-def extract_bhavcopy(
-    zip_file
-):
-
-    print()
-    print(
-        "Extracting Bhavcopy..."
-    )
-
-    # ------------------------------------------------------
-    # Create folder based on ZIP filename
-    # ------------------------------------------------------
-
-    folder_name = zip_file.stem
-
-    extraction_path = (
-        EXTRACT_FOLDER
-        / folder_name
-    )
-
-    extraction_path.mkdir(
-        parents=True,
-        exist_ok=True
-    )
-
-    # ------------------------------------------------------
-    # Extract
-    # ------------------------------------------------------
-
-    with zipfile.ZipFile(
-        zip_file,
-        "r"
-    ) as archive:
-
-        archive.extractall(
-            extraction_path
-        )
-
-        files = archive.namelist()
-
-    print()
-    print(
-        "Extraction folder:"
-    )
-
-    print(
-        extraction_path
-    )
-
-    print()
-    print(
-        "Files inside ZIP:"
-    )
-
-    for file in files:
-
-        print(
-            " -",
-            file
-        )
-
-    return extraction_path
-
-
-# ==========================================================
-# Find CSV belonging to this extraction
-# ==========================================================
-
-def find_csv(
-    extraction_path
-):
-
-    csv_files = list(
-        extraction_path.rglob(
-            "*.csv"
-        )
-    )
-
-    if not csv_files:
-
-        raise RuntimeError(
-            "No CSV file found inside "
-            "Bhavcopy ZIP."
-        )
-
-    # ------------------------------------------------------
-    # Prefer exact CSV matching ZIP folder
-    # ------------------------------------------------------
-
-    expected_name = (
-        extraction_path.name
-        + ".csv"
-    )
-
-    exact_matches = [
-
-        file
-
-        for file in csv_files
-
-        if file.name
-        == expected_name
-
-    ]
-
-    if exact_matches:
-
-        csv_file = exact_matches[0]
-
-    else:
-
-        if len(csv_files) > 1:
-
-            print()
-            print(
-                "Multiple CSV files found. "
-                "Using first CSV."
-            )
-
-        csv_file = csv_files[0]
-
-    print()
-    print(
-        "CSV selected:",
-        csv_file
-    )
-
-    return csv_file
+DEFAULT_CSV = BHAVCOPY_DIR / "test_20260529.csv"
 
 
 # ==========================================================
 # Read CSV
 # ==========================================================
 
-def read_bhavcopy(
-    csv_file
-):
+def load_csv(csv_path):
 
     print()
-    print(
-        "Reading CSV..."
-    )
+    print("=" * 70)
+    print("Loading Bhavcopy")
+    print("=" * 70)
 
-    try:
+    print("File:", csv_path)
 
-        df = pd.read_csv(
-            csv_file
-        )
+    df = pd.read_csv(csv_path)
 
-    except Exception:
-
-        df = pd.read_csv(
-            csv_file,
-            encoding="latin1"
-        )
-
-    df.columns = [
-
-        str(column)
-        .strip()
-        .upper()
-
-        for column in df.columns
-
-    ]
+    print("Rows:", len(df))
 
     return df
 
 
 # ==========================================================
-# Display sample
+# Normalize column names
 # ==========================================================
 
-def display_sample(
-    df
+def normalize_columns(df):
+
+    column_mapping = {
+        "TradDt": "trade_date",
+        "BizDt": "business_date",
+        "Sgmt": "segment",
+        "Src": "source",
+        "FinInstrmTp": "instrument_type",
+        "FinInstrmId": "instrument_id",
+        "ISIN": "isin",
+        "TckrSymb": "symbol",
+        "SctySrs": "series",
+        "FinInstrmNm": "instrument_name",
+        "OpnPric": "open",
+        "HghPric": "high",
+        "LwPric": "low",
+        "ClsPric": "close",
+        "LastPric": "last_price",
+        "PrvsClsgPric": "previous_close",
+        "TtlTradgVol": "volume",
+        "TtlTrfVal": "turnover",
+    }
+
+    missing = [
+        column
+        for column in column_mapping
+        if column not in df.columns
+    ]
+
+    if missing:
+
+        raise ValueError(
+            f"Missing required Bhavcopy columns: {missing}"
+        )
+
+    df = df.rename(
+        columns=column_mapping
+    )
+
+    return df
+
+
+# ==========================================================
+# Clean data
+# ==========================================================
+
+def clean_data(df):
+
+    df["trade_date"] = pd.to_datetime(
+        df["trade_date"],
+        errors="coerce"
+    ).dt.date
+
+    string_columns = [
+        "isin",
+        "symbol",
+        "series",
+        "instrument_type",
+        "instrument_name",
+    ]
+
+    for column in string_columns:
+
+        df[column] = (
+            df[column]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+        )
+
+    numeric_columns = [
+        "instrument_id",
+        "open",
+        "high",
+        "low",
+        "close",
+        "last_price",
+        "previous_close",
+        "volume",
+        "turnover",
+    ]
+
+    for column in numeric_columns:
+
+        df[column] = pd.to_numeric(
+            df[column],
+            errors="coerce"
+        )
+
+    # Remove rows without a trade date
+    df = df[
+        df["trade_date"].notna()
+    ].copy()
+
+    # Remove rows without symbol
+    df = df[
+        df["symbol"] != ""
+    ].copy()
+
+    print()
+    print("Valid rows:", len(df))
+
+    print(
+        "Trade dates:",
+        df["trade_date"].unique()
+    )
+
+    return df
+
+
+# ==========================================================
+# Database connection
+# ==========================================================
+
+def get_connection():
+
+    return psycopg.connect(
+        host=DB_CONFIG["host"],
+        port=DB_CONFIG["port"],
+        dbname=DB_CONFIG["dbname"],
+        user=DB_CONFIG["user"],
+        password=DB_CONFIG["password"],
+    )
+
+
+# ==========================================================
+# Upsert Security Master
+# ==========================================================
+
+def get_or_create_security(
+    cursor,
+    row
+):
+
+    cursor.execute(
+        """
+        SELECT security_id
+        FROM security_master
+        WHERE
+            (
+                isin <> ''
+                AND isin = %s
+            )
+            OR
+            (
+                isin = ''
+                AND symbol = %s
+                AND series = %s
+            )
+        ORDER BY security_id
+        LIMIT 1
+        """,
+        (
+            row["isin"],
+            row["symbol"],
+            row["series"],
+        )
+    )
+
+    result = cursor.fetchone()
+
+    if result:
+
+        security_id = result[0]
+
+        cursor.execute(
+            """
+            UPDATE security_master
+            SET
+                symbol = %s,
+                series = %s,
+                instrument_id = %s,
+                instrument_type = %s,
+                instrument_name = %s,
+                exchange = 'NSE',
+                segment = %s,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE security_id = %s
+            """,
+            (
+                row["symbol"],
+                row["series"],
+                (
+                    int(row["instrument_id"])
+                    if pd.notna(row["instrument_id"])
+                    else None
+                ),
+                row["instrument_type"],
+                row["instrument_name"],
+                row.get("segment", "CM"),
+                security_id,
+            )
+        )
+
+        return security_id, False
+
+    cursor.execute(
+        """
+        INSERT INTO security_master (
+            isin,
+            symbol,
+            series,
+            instrument_id,
+            instrument_type,
+            instrument_name,
+            exchange,
+            segment,
+            is_active
+        )
+        VALUES (
+            %s, %s, %s, %s, %s,
+            %s, 'NSE', %s, TRUE
+        )
+        RETURNING security_id
+        """,
+        (
+            row["isin"],
+            row["symbol"],
+            row["series"],
+            (
+                int(row["instrument_id"])
+                if pd.notna(row["instrument_id"])
+                else None
+            ),
+            row["instrument_type"],
+            row["instrument_name"],
+            row.get("segment", "CM"),
+        )
+    )
+
+    security_id = cursor.fetchone()[0]
+
+    return security_id, True
+
+
+# ==========================================================
+# Insert Daily Price
+# ==========================================================
+
+def insert_daily_price(
+    cursor,
+    security_id,
+    row
+):
+
+    cursor.execute(
+        """
+        INSERT INTO daily_prices (
+            security_id,
+            trade_date,
+            open,
+            high,
+            low,
+            close,
+            last_price,
+            previous_close,
+            volume,
+            turnover
+        )
+        VALUES (
+            %s, %s, %s, %s, %s,
+            %s, %s, %s, %s, %s
+        )
+        ON CONFLICT (
+            security_id,
+            trade_date
+        )
+        DO NOTHING
+        RETURNING price_id
+        """,
+        (
+            security_id,
+            row["trade_date"],
+            row["open"],
+            row["high"],
+            row["low"],
+            row["close"],
+            row["last_price"],
+            row["previous_close"],
+            (
+                int(row["volume"])
+                if pd.notna(row["volume"])
+                else None
+            ),
+            row["turnover"],
+        )
+    )
+
+    result = cursor.fetchone()
+
+    return result is not None
+
+
+# ==========================================================
+# File / historical helpers
+# ==========================================================
+
+NSE_UDIFF_URL = (
+    "https://nsearchives.nseindia.com/content/cm/"
+    "BhavCopy_NSE_CM_0_0_0_{date}_F_0000.csv.zip"
+)
+
+DOWNLOAD_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/139.0 Safari/537.36"
+    ),
+    "Accept": "application/zip,application/octet-stream,*/*",
+    "Referer": "https://www.nseindia.com/",
+}
+
+
+def discover_csv_files(path):
+    """Accept a single CSV or a directory containing CSV files."""
+    path = Path(path)
+
+    if path.is_file():
+        return [path]
+
+    if path.is_dir():
+        files = sorted(
+            p for p in path.rglob("*.csv")
+            if p.is_file()
+        )
+        if not files:
+            raise FileNotFoundError(
+                f"No CSV files found in directory: {path}"
+            )
+        return files
+
+    raise FileNotFoundError(
+        f"Bhavcopy path not found: {path}"
+    )
+
+
+def parse_date_argument(value):
+    return datetime.strptime(
+        value,
+        "%Y-%m-%d"
+    ).date()
+
+
+def is_weekend(value):
+    return value.weekday() >= 5
+
+
+def build_udiff_url(trade_date):
+    return NSE_UDIFF_URL.format(
+        date=trade_date.strftime("%Y%m%d")
+    )
+
+
+def download_historical_bhavcopy(
+    session,
+    trade_date,
+    output_dir
+):
+    """
+    Download one NSE CM UDiFF Bhavcopy ZIP.
+
+    Returns:
+        Path to ZIP on success/reuse.
+        None when NSE has no file for that date.
+    """
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    zip_path = (
+        output_dir
+        / (
+            "BhavCopy_NSE_CM_0_0_0_"
+            f"{trade_date.strftime('%Y%m%d')}_F_0000.csv.zip"
+        )
+    )
+
+    if zip_path.exists() and zip_path.stat().st_size > 0:
+        print("Already downloaded:", zip_path)
+        return zip_path
+
+    url = build_udiff_url(trade_date)
+
+    print("Downloading:", trade_date)
+    print("URL:", url)
+
+    response = session.get(
+        url,
+        timeout=45
+    )
+
+    if response.status_code == 404:
+        print("No Bhavcopy available:", trade_date)
+        return None
+
+    response.raise_for_status()
+
+    if not response.content:
+        raise ValueError(
+            f"Empty NSE response for {trade_date}"
+        )
+
+    zip_path.write_bytes(
+        response.content
+    )
+
+    print(
+        "Downloaded:",
+        zip_path.name,
+        "| bytes:",
+        len(response.content)
+    )
+
+    return zip_path
+
+
+def extract_udiff_csv(
+    zip_path,
+    extract_dir
+):
+    """Extract the primary CSV from a UDiFF ZIP."""
+
+    import zipfile
+
+    extract_dir = Path(extract_dir)
+    extract_dir.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    with zipfile.ZipFile(
+        zip_path,
+        "r"
+    ) as archive:
+
+        csv_names = [
+            name
+            for name in archive.namelist()
+            if name.lower().endswith(".csv")
+        ]
+
+        if not csv_names:
+            raise ValueError(
+                f"No CSV found inside {zip_path}"
+            )
+
+        csv_name = sorted(
+            csv_names,
+            key=lambda value: (
+                value.count("/"),
+                len(value)
+            )
+        )[0]
+
+        target = (
+            extract_dir
+            / Path(csv_name).name
+        )
+
+        if not target.exists():
+
+            with archive.open(
+                csv_name
+            ) as source_file, open(
+                target,
+                "wb"
+            ) as target_file:
+
+                target_file.write(
+                    source_file.read()
+                )
+
+    print(
+        "Extracted:",
+        target
+    )
+
+    return target
+
+
+# ==========================================================
+# Ingest one Bhavcopy file
+# ==========================================================
+
+def ingest_file(
+    conn,
+    csv_path
 ):
 
     print()
-    print(
-        "=" * 70
+    print("=" * 70)
+    print("Loading Bhavcopy")
+    print("=" * 70)
+    print("File:", csv_path)
+
+    df = load_csv(
+        csv_path
     )
 
-    print(
-        "BHAVCOPY SUCCESSFULLY READ"
+    df = normalize_columns(
+        df
     )
 
-    print(
-        "=" * 70
+    df = clean_data(
+        df
     )
 
-    print()
-
-    print(
-        "Rows:",
-        len(df)
+    trade_dates = (
+        df["trade_date"]
+        .dropna()
+        .unique()
     )
 
-    print()
+    if len(trade_dates) != 1:
 
-    print(
-        "Columns:"
-    )
-
-    for column in df.columns:
-
-        print(
-            " -",
-            column
+        raise ValueError(
+            f"Expected exactly one trading date in "
+            f"{csv_path.name}, found: {trade_dates}"
         )
 
-    print()
+    trade_date = trade_dates[0]
 
-    print(
-        "First 10 records:"
-    )
+    inserted_security_count = 0
+    updated_security_count = 0
+    inserted_price_count = 0
+    duplicate_price_count = 0
 
-    print()
+    with conn.cursor() as cursor:
 
-    print(
-        df.head(10).to_string(
-            index=False
+        cursor.execute(
+            """
+            INSERT INTO bhavcopy_runs (
+                trade_date,
+                source_file,
+                downloaded_at,
+                total_rows,
+                valid_rows,
+                status
+            )
+            VALUES (
+                %s,
+                %s,
+                CURRENT_TIMESTAMP,
+                %s,
+                %s,
+                'RUNNING'
+            )
+            RETURNING run_id
+            """,
+            (
+                trade_date,
+                str(csv_path),
+                len(df),
+                len(df),
+            )
         )
-    )
+
+        run_id = cursor.fetchone()[0]
+
+        try:
+
+            for position, (_, row) in enumerate(
+                df.iterrows(),
+                start=1
+            ):
+
+                security_id, created = (
+                    get_or_create_security(
+                        cursor,
+                        row
+                    )
+                )
+
+                if created:
+                    inserted_security_count += 1
+                else:
+                    updated_security_count += 1
+
+                inserted = insert_daily_price(
+                    cursor,
+                    security_id,
+                    row
+                )
+
+                if inserted:
+                    inserted_price_count += 1
+                else:
+                    duplicate_price_count += 1
+
+                if position % 500 == 0:
+
+                    print(
+                        f"Processed {position} / {len(df)}"
+                    )
+
+            cursor.execute(
+                """
+                UPDATE bhavcopy_runs
+                SET
+                    processed_at = CURRENT_TIMESTAMP,
+                    inserted_rows = %s,
+                    updated_rows = %s,
+                    duplicate_rows = %s,
+                    status = 'SUCCESS'
+                WHERE run_id = %s
+                """,
+                (
+                    inserted_price_count,
+                    updated_security_count,
+                    duplicate_price_count,
+                    run_id,
+                )
+            )
+
+            conn.commit()
+
+        except Exception:
+
+            conn.rollback()
+
+            with conn.cursor() as status_cursor:
+
+                status_cursor.execute(
+                    """
+                    UPDATE bhavcopy_runs
+                    SET
+                        processed_at = CURRENT_TIMESTAMP,
+                        status = 'FAILED'
+                    WHERE run_id = %s
+                    """,
+                    (run_id,)
+                )
+
+            conn.commit()
+
+            raise
 
     print()
+    print("Trade date:", trade_date)
+    print("Source rows:", len(df))
+    print("New securities:", inserted_security_count)
+    print("Existing securities updated:", updated_security_count)
+    print("Prices inserted:", inserted_price_count)
+    print("Duplicate prices skipped:", duplicate_price_count)
 
-    print(
-        "=" * 70
-    )
+    return {
+        "trade_date": trade_date,
+        "source_rows": len(df),
+        "new_securities": inserted_security_count,
+        "updated_securities": updated_security_count,
+        "prices_inserted": inserted_price_count,
+        "duplicates": duplicate_price_count,
+    }
 
 
 # ==========================================================
-# Main
+# Historical date-range downloader + ingestion
+# ==========================================================
+
+def ingest_historical_range(
+    start_date,
+    end_date
+):
+    """
+    Download and ingest one NSE CM trading day at a time.
+
+    Files are stored under:
+        data/bhavcopy/historical/YYYY/MM/
+
+    A missing date (weekend/holiday) is logged and skipped.
+    Existing ZIPs are reused.
+    Database writes remain idempotent via the existing
+    (security_id, trade_date) unique key.
+    """
+
+    start_date = (
+        parse_date_argument(start_date)
+        if isinstance(start_date, str)
+        else start_date
+    )
+
+    end_date = (
+        parse_date_argument(end_date)
+        if isinstance(end_date, str)
+        else end_date
+    )
+
+    if start_date > end_date:
+        raise ValueError(
+            "Start date cannot be after end date."
+        )
+
+    download_root = (
+        BHAVCOPY_DIR
+        / "historical"
+    )
+
+    session = requests.Session()
+
+    session.headers.update(
+        DOWNLOAD_HEADERS
+    )
+
+    stats = {
+        "dates_checked": 0,
+        "weekends_skipped": 0,
+        "files_downloaded_or_reused": 0,
+        "dates_missing": 0,
+        "dates_ingested": 0,
+        "prices_inserted": 0,
+        "duplicate_prices": 0,
+        "failed": 0,
+    }
+
+    conn = get_connection()
+
+    try:
+
+        current_date = start_date
+
+        while current_date <= end_date:
+
+            stats["dates_checked"] += 1
+
+            print()
+            print("#" * 70)
+            print(
+                "Historical date:",
+                current_date
+            )
+            print("#" * 70)
+
+            if is_weekend(current_date):
+
+                stats["weekends_skipped"] += 1
+
+                print(
+                    "Weekend - skipped"
+                )
+
+                current_date += pd.Timedelta(
+                    days=1
+                ).to_pytimedelta()
+
+                continue
+
+            day_dir = (
+                download_root
+                / current_date.strftime("%Y")
+                / current_date.strftime("%m")
+            )
+
+            try:
+
+                zip_path = download_historical_bhavcopy(
+                    session,
+                    current_date,
+                    day_dir
+                )
+
+                if zip_path is None:
+
+                    stats["dates_missing"] += 1
+
+                    current_date += pd.Timedelta(
+                        days=1
+                    ).to_pytimedelta()
+
+                    continue
+
+                stats[
+                    "files_downloaded_or_reused"
+                ] += 1
+
+                csv_path = extract_udiff_csv(
+                    zip_path,
+                    day_dir / "extracted"
+                )
+
+                result = ingest_file(
+                    conn,
+                    csv_path
+                )
+
+                stats["dates_ingested"] += 1
+                stats["prices_inserted"] += result[
+                    "prices_inserted"
+                ]
+                stats["duplicate_prices"] += result[
+                    "duplicates"
+                ]
+
+            except Exception as error:
+
+                conn.rollback()
+
+                stats["failed"] += 1
+
+                print(
+                    "FAILED:",
+                    current_date,
+                    "|",
+                    error
+                )
+
+            current_date += pd.Timedelta(
+                days=1
+            ).to_pytimedelta()
+
+    finally:
+
+        conn.close()
+        session.close()
+
+    print()
+    print("=" * 70)
+    print("HISTORICAL BHAVCOPY LOAD COMPLETE")
+    print("=" * 70)
+
+    for key, value in stats.items():
+        print(
+            f"{key}:",
+            value
+        )
+
+    print("=" * 70)
+
+
+# ==========================================================
+# Main ingestion
 # ==========================================================
 
 def main():
 
-    driver = None
+    args = sys.argv[1:]
+
+    # Historical mode:
+    #
+    #   python fetch_bhavcopy.py \
+    #       --historical 2025-01-01 2026-09-04
+    #
+    # Existing ZIP/CSV files are reused.
+
+    if args and args[0] == "--historical":
+
+        if len(args) != 3:
+
+            raise ValueError(
+                "Usage: fetch_bhavcopy.py "
+                "--historical YYYY-MM-DD YYYY-MM-DD"
+            )
+
+        ingest_historical_range(
+            args[1],
+            args[2]
+        )
+
+        return
+
+    # Existing compatibility:
+    #
+    #   python fetch_bhavcopy.py file.csv
+    #
+    # or
+    #
+    #   python fetch_bhavcopy.py directory
+
+    input_path = (
+        Path(args[0])
+        if args
+        else DEFAULT_CSV
+    )
+
+    csv_files = discover_csv_files(
+        input_path
+    )
+
+    print()
+    print("=" * 70)
+    print("MarketPulse NSE Bhavcopy Loader")
+    print("=" * 70)
+    print("Input:", input_path)
+    print("Files discovered:", len(csv_files))
+    print("=" * 70)
+
+    conn = get_connection()
+
+    totals = {
+        "files_success": 0,
+        "files_failed": 0,
+        "source_rows": 0,
+        "new_securities": 0,
+        "updated_securities": 0,
+        "prices_inserted": 0,
+        "duplicates": 0,
+    }
 
     try:
 
-        print()
-        print(
-            "=" * 70
-        )
-
-        print(
-            "       MarketPulse NSE Bhavcopy Downloader"
-        )
-
-        print(
-            "=" * 70
-        )
-
-        # --------------------------------------------------
-        # Determine requested date
-        # --------------------------------------------------
-
-        requested_date = (
-            get_requested_date()
-        )
-
-        # --------------------------------------------------
-        # Create driver
-        # --------------------------------------------------
-
-        driver = create_driver()
-
-        # --------------------------------------------------
-        # Select URL
-        # --------------------------------------------------
-
-        if requested_date:
+        for index, csv_path in enumerate(
+            csv_files,
+            start=1
+        ):
 
             print()
             print(
-                "Historical date requested:",
-                requested_date
+                f"[{index}/{len(csv_files)}]",
+                csv_path.name
             )
 
-            href = (
-                build_historical_bhavcopy_url(
-                    requested_date
+            try:
+
+                result = ingest_file(
+                    conn,
+                    csv_path
                 )
-            )
 
-            print()
-            print(
-                "Historical Bhavcopy URL:"
-            )
+                totals["files_success"] += 1
+                totals["source_rows"] += result[
+                    "source_rows"
+                ]
+                totals["new_securities"] += result[
+                    "new_securities"
+                ]
+                totals["updated_securities"] += result[
+                    "updated_securities"
+                ]
+                totals["prices_inserted"] += result[
+                    "prices_inserted"
+                ]
+                totals["duplicates"] += result[
+                    "duplicates"
+                ]
 
-            print(
-                href
-            )
+            except Exception as error:
 
-        else:
+                totals["files_failed"] += 1
 
-            href = (
-                find_bhavcopy_link(
-                    driver
+                print(
+                    "ERROR:",
+                    error
                 )
-            )
-
-        # --------------------------------------------------
-        # Download
-        # --------------------------------------------------
-
-        zip_file = (
-            download_bhavcopy(
-                driver,
-                href
-            )
-        )
-
-        # --------------------------------------------------
-        # Extract into date-specific folder
-        # --------------------------------------------------
-
-        extraction_path = (
-            extract_bhavcopy(
-                zip_file
-            )
-        )
-
-        # --------------------------------------------------
-        # Find correct CSV
-        # --------------------------------------------------
-
-        csv_file = (
-            find_csv(
-                extraction_path
-            )
-        )
-
-        # --------------------------------------------------
-        # Read
-        # --------------------------------------------------
-
-        df = (
-            read_bhavcopy(
-                csv_file
-            )
-        )
-
-        # --------------------------------------------------
-        # Display
-        # --------------------------------------------------
-
-        display_sample(
-            df
-        )
-
-        print()
-
-        print(
-            "Step 1 completed successfully."
-        )
-
-    except Exception as error:
-
-        print()
-        print(
-            "=" * 70
-        )
-
-        print(
-            "ERROR"
-        )
-
-        print(
-            "=" * 70
-        )
-
-        print(
-            error
-        )
 
     finally:
 
-        if driver:
+        conn.close()
 
-            driver.quit()
+    print()
+    print("=" * 70)
+    print("BHAVCOPY LOAD COMPLETE")
+    print("=" * 70)
+
+    print(
+        "Files successful:",
+        totals["files_success"]
+    )
+    print(
+        "Files failed:",
+        totals["files_failed"]
+    )
+    print(
+        "Source rows:",
+        totals["source_rows"]
+    )
+    print(
+        "New securities:",
+        totals["new_securities"]
+    )
+    print(
+        "Existing securities updated:",
+        totals["updated_securities"]
+    )
+    print(
+        "Prices inserted:",
+        totals["prices_inserted"]
+    )
+    print(
+        "Duplicate prices skipped:",
+        totals["duplicates"]
+    )
+
+    print("=" * 70)
 
 
 # ==========================================================
-# Start
+# Run
 # ==========================================================
 
 if __name__ == "__main__":
-
     main()

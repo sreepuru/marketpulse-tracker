@@ -1,0 +1,165 @@
+/* ==========================================================
+   DividendDashboard.css
+   Dividend-specific typography
+   ========================================================== */
+
+.mp-dividend-page {
+    font-size: 14px;
+}
+
+.mp-dividend-title {
+    font-size: 30px;
+    font-weight: 700;
+}
+
+.mp-dividend-description {
+    font-size: 13px;
+}
+
+.mp-dividend-tab {
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.mp-dividend-updated,
+.mp-dividend-updated-bottom,
+.mp-dividend-count {
+    font-size: 11px;
+}
+
+.mp-dividend-summary-card span {
+    font-size: 11px;
+}
+
+.mp-dividend-summary-card strong {
+    font-size: 22px;
+    font-weight: 900;
+}
+
+.mp-dividend-table thead th {
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.mp-dividend-table td {
+    font-size: 14px;
+}
+
+.mp-dividend-symbol {
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.mp-dividend-series {
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.mp-dividend-money {
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.mp-dividend-current-price {
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.mp-dividend-date {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.mp-dividend-yield {
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.mp-dividend-change strong {
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.mp-dividend-change small {
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.mp-dividend-empty {
+    font-size: 13px;
+}
+
+.mp-methodology-toggle {
+    font-size: 12px;
+}
+
+.mp-methodology-text strong {
+    font-size: 12px;
+}
+
+.mp-methodology-text small {
+    font-size: 10px;
+}
+
+.mp-formula-title {
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.mp-formula-expression {
+    font-size: 13px;
+}
+
+.mp-formula-note {
+    font-size: 10px;
+}
+
+@media (max-width: 700px) {
+    .mp-dividend-title {
+        font-size: 28px;
+    }
+
+    .mp-dividend-table thead th {
+        font-size: 10px;
+    }
+
+    .mp-dividend-table td {
+        font-size: 13px;
+    }
+
+    .mp-dividend-symbol {
+        font-size: 14px;
+    }
+
+    .mp-dividend-money,
+    .mp-dividend-current-price,
+    .mp-dividend-yield {
+        font-size: 14px;
+    }
+
+    .mp-dividend-date {
+        font-size: 12px;
+    }
+
+    .mp-dividend-change strong {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .mp-dividend-table thead th {
+        font-size: 9px;
+    }
+
+    .mp-dividend-table td {
+        font-size: 12px;
+    }
+
+    .mp-dividend-symbol {
+        font-size: 13px;
+    }
+
+    .mp-dividend-date {
+        font-size: 11px;
+    }
+}

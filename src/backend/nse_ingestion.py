@@ -192,56 +192,37 @@ def run_script(script_path, *args):
 # FIND LATEST EXTRACTED CSV
 # ==========================================================
 
-def find_latest_bhavcopy():
+def get_latest_trade_date():
     """
-    Find the newest valid NSE Bhavcopy CSV.
+    Read the latest available trade date from PostgreSQL.
 
-    Searches recursively because the NSE ZIP extraction
-    currently creates a directory containing the CSV.
-
-    Test files are deliberately ignored.
+    The existing fetch_bhavcopy.py --historical mode downloads,
+    extracts and ingests the available trading dates directly.
+    Therefore PostgreSQL is authoritative after Step 1.
     """
 
-    if not EXTRACTED_DIR.exists():
+    connection = get_db_connection()
 
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT MAX(trade_date) FROM daily_prices"
+            )
+            latest_date = cursor.fetchone()[0]
+    finally:
+        connection.close()
+
+    if latest_date is None:
         fail(
-            "Bhavcopy extraction directory does "
-            "not exist:\n"
-            f"{EXTRACTED_DIR}"
+            "daily_prices contains no trade date after the Bhavcopy fetch. "
+            "The ingestion cannot determine a latest market date."
         )
-
-    csv_files = []
-
-    for path in EXTRACTED_DIR.rglob("*.csv"):
-
-        if not path.is_file():
-            continue
-
-        # Ignore test files.
-        if path.name.lower().startswith("test_"):
-            continue
-
-        csv_files.append(path)
-
-    if not csv_files:
-
-        fail(
-            "No Bhavcopy CSV was found after "
-            "download/extraction."
-        )
-
-    csv_files.sort(
-        key=lambda p: p.stat().st_mtime,
-        reverse=True,
-    )
-
-    selected = csv_files[0]
 
     print()
-    print("Latest Bhavcopy CSV:")
-    print(selected)
+    print("Latest trade date in PostgreSQL:")
+    print(latest_date)
 
-    return selected
+    return latest_date
 
 
 # ==========================================================
@@ -816,43 +797,63 @@ def main():
         # ==================================================
 
         title(
-            "STEP 1 — DOWNLOAD NSE BHAVCOPY"
+            "STEP 1 — DOWNLOAD / CATCH UP NSE BHAVCOPY"
         )
 
-        run_script(
-            FETCH_BHAVCOPY
-        )
+        latest_before = get_latest_trade_date()
+        today = datetime.now().date()
+        start_date = latest_before + pd.Timedelta(days=1).to_pytimedelta()
+
+        print()
+        print(f"Latest DB trade date : {latest_before}")
+        print(f"Fetch start date     : {start_date}")
+        print(f"Fetch end date       : {today}")
+
+        if start_date <= today:
+            # The existing historical mode downloads, extracts and
+            # ingests each available trading day. Do not load the same
+            # files a second time through LOAD_BHAVCOPY.
+            run_script(
+                FETCH_BHAVCOPY,
+                "--historical",
+                start_date.isoformat(),
+                today.isoformat(),
+            )
+        else:
+            print(
+                "Database is already current through today's date. "
+                "No Bhavcopy catch-up is required."
+            )
 
         # ==================================================
         # STEP 2
         # ==================================================
 
         title(
-            "STEP 2 — FIND DOWNLOADED BHAVCOPY"
+            "STEP 2 — VERIFY LATEST INGESTED BHAVCOPY"
         )
 
-        csv_path = (
-            find_latest_bhavcopy()
-        )
+        trade_date = get_latest_trade_date()
 
-        trade_date = (
-            detect_trade_date(
-                csv_path
+        if trade_date < latest_before:
+            fail(
+                f"Latest database trade date moved backwards from "
+                f"{latest_before} to {trade_date}."
             )
-        )
 
         # ==================================================
         # STEP 3
         # ==================================================
 
         title(
-            "STEP 3 — LOAD BHAVCOPY "
-            "INTO POSTGRESQL"
+            "STEP 3 — BHAVCOPY DATABASE LOAD"
         )
 
-        run_script(
-            LOAD_BHAVCOPY,
-            csv_path,
+        print(
+            "Skipped explicit loader step because the existing "
+            "fetch_bhavcopy.py --historical mode performs the "
+            "download, extraction and database ingestion for each "
+            "available trading date."
         )
 
         # ==================================================

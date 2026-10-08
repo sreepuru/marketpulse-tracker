@@ -1,5 +1,25 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,15 +27,10 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
+# IDE / OS
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
@@ -23,4 +38,69 @@ dist-ssr
 *.sln
 *.sw?
 
-.vercel
+# Vercel
+.vercel/
+
+# MarketPulse runtime / raw data
+data/bhavcopy/
+data/extracted/
+data/news/
+data/attachments/
+data/historical/
+data/pdf-verification/
+data/__pycache__/
+data/*.zip
+data/*.csv
+data/*.CSV
+data/*.json
+data/*.html
+data/*.js
+data/*.txt
+data/__pycache__/
+
+# Backend runtime data
+src/backend/data/
+src/backend/__pycache__/
+
+# Python generated artifacts
+*.bak
+
+# Temporary / generated files
+pending_agent_predictions.csv
+pit_pilot_ids.txt
+query.sql
+
+# ML generated artifacts
+ml_models/
+src/backend/ml_models/
+
+# Generated benchmark / result files
+*_results.json
+marketpulse_ml_coverage.sql
+marketpulse_ml_phase1.sql
+marketpulse_ml_phase2.sql
+marketpulse_ml_validate_cutoff_v2.sql
+
+# Local database / dumps
+*.dump
+*.backup
+*.sql.gz
+
+# Local/runtime data
+/data/
+
+# MarketPulse generated/review artifacts
+src/backend/*_queue.csv
+src/backend/*_review.csv
+src/backend/*_temp.py
+src/backend/*.bak
+
+# Local security master exports
+Bse_master.csv
+
+# Generated MarketPulse artifacts
+src/backend/migration/*.CSV
+src/backend/AI Scoring/individual_stocks/pit_missing_news_ids.txt
+src/backend/marketpulse_historical_identity_evidence_queue.csv
+src/backend/marketpulse_historical_identity_review.csv
+src/data/bhavcopy/

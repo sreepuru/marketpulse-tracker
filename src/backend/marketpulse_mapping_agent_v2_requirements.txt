@@ -1,0 +1,7 @@
+# MarketPulse Mapping Agent V2
+# Existing MarketPulse dependencies are intentionally not repeated.
+splink[postgres]>=4,<5
+langgraph>=1.2,<2
+langchain-core>=1.4,<2
+pydantic>=2.7
+SQLAlchemy>=2,<3

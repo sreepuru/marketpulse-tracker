@@ -1,0 +1,1152 @@
+/* ==========================================================
+   StockSearch.css
+   Stock News & Feed typography
+   ========================================================== */
+
+.stock-feed-page {
+    font-size: 14px;
+}
+
+.stock-feed-page .page-title > span {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+}
+
+.stock-feed-page .page-title h2 {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.stock-feed-page .page-title p {
+    font-size: 13px;
+}
+
+/* Search controls */
+.stock-feed-page input,
+.stock-feed-page select {
+    font-size: 14px;
+}
+
+/* Buttons / controls */
+.stock-feed-page button {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+/* Keep common stock/feed data readable without changing layout. */
+.stock-feed-page strong {
+    font-weight: 800;
+}
+
+@media (max-width: 700px) {
+    .stock-feed-page .page-title h2 {
+        font-size: 24px;
+    }
+
+    .stock-feed-page .page-title p {
+        font-size: 12px;
+    }
+
+    .stock-feed-page input,
+    .stock-feed-page select {
+        font-size: 13px;
+    }
+}
+
+
+/* =========================================================
+   STOCK NEWS & FEED — STOCK OVERVIEW
+========================================================= */
+
+.mp-stock-page {
+    width: 100%;
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 34px 38px 60px;
+}
+
+/* =========================================================
+   PAGE HEADER
+========================================================= */
+
+.mp-stock-page-header {
+    margin-bottom: 22px;
+}
+
+.mp-stock-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px;
+}
+
+.mp-eyebrow {
+    margin-bottom: 7px;
+
+    color: var(--mp-moss);
+
+    font-size: 10px;
+    font-weight: 800;
+
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.mp-stock-page h1 {
+    margin: 0;
+
+    color: var(--mp-ink);
+
+    font-family: "Fraunces", Georgia, serif;
+
+    font-size: 34px;
+    line-height: 1.1;
+}
+
+.mp-stock-page-header p {
+    margin: 8px 0 0;
+
+    color: var(--muted);
+
+    font-size: 13px;
+}
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+.mp-stock-search {
+    display: flex;
+
+    width: min(620px, 100%);
+
+    margin-top: 22px;
+}
+
+.mp-stock-search input {
+    flex: 1;
+
+    min-width: 0;
+
+    padding: 13px 16px;
+
+    background: var(--mp-surface);
+
+    border: 1px solid var(--mp-border);
+    border-right: 0;
+
+    border-radius: 12px 0 0 12px;
+
+    color: var(--mp-ink);
+
+    font-size: 14px;
+
+    outline: none;
+}
+
+.mp-stock-search input:focus {
+    border-color: var(--mp-moss);
+}
+
+.mp-stock-search button {
+    padding: 13px 22px;
+
+    border: 1px solid var(--mp-moss);
+
+    border-radius: 0 12px 12px 0;
+
+    background: var(--mp-moss);
+
+    color: #ffffff;
+
+    font-size: 13px;
+    font-weight: 800;
+
+    cursor: pointer;
+}
+
+.mp-stock-search button:disabled {
+    opacity: 0.65;
+
+    cursor: wait;
+}
+
+/* =========================================================
+   ERROR
+========================================================= */
+
+.mp-stock-error {
+    margin-bottom: 18px;
+    padding: 13px 16px;
+
+    background: var(--mp-negative-light);
+
+    border: 1px solid #ebc8c1;
+
+    border-radius: 12px;
+
+    color: var(--mp-negative);
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* =========================================================
+   STOCK OVERVIEW
+========================================================= */
+
+.mp-stock-overview {
+    display: grid;
+
+    grid-template-columns:
+        minmax(220px, 1.3fr)
+        minmax(180px, 0.8fr);
+
+    gap: 24px;
+
+    margin-bottom: 20px;
+    padding: 26px;
+
+    background: var(--mp-surface);
+
+    border: 1px solid var(--mp-border);
+
+    border-radius: var(--mp-radius);
+
+    box-shadow: var(--mp-shadow);
+}
+
+/* =========================================================
+   IDENTITY
+========================================================= */
+
+.mp-stock-identity {
+    min-width: 0;
+}
+
+.mp-stock-symbol {
+    color: var(--mp-moss-dark);
+
+    font-family: "Fraunces", Georgia, serif;
+
+    font-size: 30px;
+    font-weight: 800;
+}
+
+.mp-stock-company {
+    margin-top: 4px;
+
+    color: var(--mp-ink);
+
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.mp-stock-meta {
+    display: flex;
+    align-items: center;
+
+    flex-wrap: wrap;
+
+    gap: 7px;
+
+    margin-top: 9px;
+
+    color: var(--muted);
+
+    font-size: 11px;
+}
+
+/* =========================================================
+   PRICE
+========================================================= */
+
+.mp-stock-price {
+    padding-left: 24px;
+
+    border-left: 1px solid var(--mp-border);
+}
+
+.mp-stock-price-label {
+    color: var(--muted);
+
+    font-size: 9px;
+    font-weight: 800;
+
+    letter-spacing: 0.12em;
+}
+
+.mp-stock-price-value {
+    margin-top: 5px;
+
+    color: var(--mp-ink);
+
+    font-family: "Fraunces", Georgia, serif;
+
+    font-size: 32px;
+    font-weight: 800;
+}
+
+.mp-stock-price-change {
+    display: flex;
+    align-items: center;
+
+    gap: 5px;
+
+    margin-top: 4px;
+
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.mp-stock-price-change span {
+    font-size: 12px;
+}
+
+.mp-stock-price-change.positive {
+    color: var(--mp-positive);
+}
+
+.mp-stock-price-change.negative {
+    color: var(--mp-negative);
+}
+
+.mp-stock-price-change.neutral {
+    color: var(--mp-neutral);
+}
+
+/* =========================================================
+   METRICS
+========================================================= */
+
+.mp-stock-metrics {
+    grid-column: 1 / -1;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(7, minmax(100px, 1fr));
+
+    gap: 10px;
+
+    padding-top: 20px;
+
+    border-top: 1px solid var(--mp-border);
+}
+
+.mp-stock-metric {
+    padding: 12px 13px;
+
+    background: var(--surface-soft);
+
+    border: 1px solid var(--mp-border);
+
+    border-radius: 12px;
+}
+
+.mp-stock-metric span {
+    display: block;
+
+    color: var(--muted);
+
+    font-size: 9px;
+    font-weight: 700;
+
+    text-transform: uppercase;
+}
+
+.mp-stock-metric strong {
+    display: block;
+
+    margin-top: 6px;
+
+    color: var(--mp-ink);
+
+    font-size: 14px;
+    font-weight: 800;
+}
+
+/* =========================================================
+   COMMON STOCK CARD
+========================================================= */
+
+.mp-stock-card {
+    margin-bottom: 20px;
+    padding: 22px 24px;
+
+    background: var(--mp-surface);
+
+    border: 1px solid var(--mp-border);
+
+    border-radius: var(--mp-radius);
+
+    box-shadow: var(--mp-shadow);
+}
+
+.mp-stock-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin-bottom: 15px;
+}
+
+.mp-stock-card-header h2 {
+    margin: 0;
+
+    color: var(--mp-ink);
+
+    font-family: "Fraunces", Georgia, serif;
+
+    font-size: 20px;
+}
+
+.mp-stock-card-header p {
+    margin: 4px 0 0;
+
+    color: var(--muted);
+
+    font-size: 11px;
+}
+
+.mp-stock-card-badge {
+    padding: 6px 10px;
+
+    background: var(--mp-moss-light);
+
+    border-radius: 999px;
+
+    color: var(--mp-moss-dark);
+
+    font-size: 9px;
+    font-weight: 800;
+
+    letter-spacing: 0.08em;
+}
+
+/* =========================================================
+   PRICE TABLE
+========================================================= */
+
+.mp-price-table-wrapper {
+    width: 100%;
+
+    overflow-x: auto;
+}
+
+.mp-price-table {
+    width: 100%;
+
+    border-collapse: collapse;
+
+    min-width: 650px;
+}
+
+.mp-price-table th {
+    padding: 11px 12px;
+
+    background: var(--surface-soft);
+
+    border-bottom: 1px solid var(--mp-border);
+
+    color: var(--muted);
+
+    font-size: 10px;
+    font-weight: 800;
+
+    text-align: left;
+
+    text-transform: uppercase;
+}
+
+.mp-price-table td {
+    padding: 13px 12px;
+
+    border-bottom: 1px solid #eeeae1;
+
+    color: var(--mp-ink);
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.mp-price-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.mp-price-table tbody tr:hover {
+    background: #faf9f4;
+}
+
+.mp-price-table .price-close {
+    font-weight: 900;
+}
+
+.mp-empty-cell {
+    padding: 25px !important;
+
+    color: var(--muted) !important;
+
+    text-align: center;
+}
+
+/* =========================================================
+   CORPORATE ACTIONS
+========================================================= */
+
+.mp-corporate-actions {
+    display: flex;
+    flex-direction: column;
+}
+
+.mp-corporate-action {
+    display: grid;
+
+    grid-template-columns: 120px 1fr 110px;
+
+    gap: 15px;
+
+    align-items: center;
+
+    padding: 13px 0;
+
+    border-bottom: 1px solid #eeeae1;
+}
+
+.mp-corporate-action:last-child {
+    border-bottom: 0;
+}
+
+.mp-action-type {
+    color: var(--mp-moss-dark);
+
+    font-size: 10px;
+    font-weight: 900;
+
+    text-transform: uppercase;
+}
+
+.mp-action-subject {
+    color: var(--mp-ink);
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.mp-action-date {
+    color: var(--muted);
+
+    font-size: 11px;
+
+    text-align: right;
+}
+
+/* =========================================================
+   NEWS AREA
+========================================================= */
+
+.mp-news-feed-section {
+    margin-top: 24px;
+}
+
+.mp-section-heading {
+    margin-bottom: 16px;
+}
+
+.mp-section-heading h2 {
+    margin: 0;
+
+    color: var(--mp-ink);
+
+    font-family: "Fraunces", Georgia, serif;
+
+    font-size: 24px;
+}
+
+.mp-news-feed-grid {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1.4fr)
+        minmax(280px, 0.8fr)
+        minmax(280px, 0.8fr);
+
+    gap: 18px;
+}
+
+.mp-news-column {
+    min-width: 0;
+
+    padding: 20px;
+
+    background: var(--mp-surface);
+
+    border: 1px solid var(--mp-border);
+
+    border-radius: var(--mp-radius);
+
+    box-shadow: var(--mp-shadow);
+}
+
+.mp-news-column h3 {
+    margin: 0 0 12px;
+
+    color: var(--mp-ink);
+
+    font-family: "Fraunces", Georgia, serif;
+
+    font-size: 17px;
+}
+
+.mp-news-placeholder {
+    min-height: 100px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: var(--surface-soft);
+
+    border-radius: 12px;
+
+    color: var(--muted);
+
+    font-size: 11px;
+
+    text-align: center;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1100px) {
+    .mp-stock-metrics {
+        grid-template-columns:
+            repeat(4, minmax(120px, 1fr));
+    }
+
+    .mp-news-feed-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .mp-stock-page {
+        padding: 24px 16px 40px;
+    }
+
+    .mp-stock-page h1 {
+        font-size: 28px;
+    }
+
+    .mp-stock-overview {
+        grid-template-columns: 1fr;
+
+        padding: 20px;
+    }
+
+    .mp-stock-price {
+        padding-left: 0;
+
+        padding-top: 18px;
+
+        border-left: 0;
+        border-top: 1px solid var(--mp-border);
+    }
+
+    .mp-stock-metrics {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .mp-news-feed-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mp-corporate-action {
+        grid-template-columns: 1fr;
+        gap: 5px;
+    }
+
+    .mp-action-date {
+        text-align: left;
+    }
+}
+
+@media (max-width: 480px) {
+    .mp-stock-page {
+        padding: 18px 12px 30px;
+    }
+
+    .mp-stock-search {
+        width: 100%;
+    }
+
+    .mp-stock-price-value {
+        font-size: 27px;
+    }
+
+    .mp-stock-metrics {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .mp-stock-card {
+        padding: 17px 14px;
+    }
+}
+/* =========================================================
+   STOCK SEARCH RESULTS
+========================================================= */
+
+.mp-stock-search-results {
+    width: min(620px, 100%);
+    margin-top: 8px;
+
+    background: var(--mp-surface);
+
+    border: 1px solid var(--mp-border);
+    border-radius: 12px;
+
+    overflow: hidden;
+
+    box-shadow: var(--mp-shadow);
+
+    position: relative;
+    z-index: 20;
+}
+
+.mp-search-results-title {
+    padding: 10px 14px;
+
+    background: var(--surface-soft);
+
+    color: var(--muted);
+
+    font-size: 10px;
+    font-weight: 800;
+
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.mp-search-result {
+    display: flex;
+
+    width: 100%;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 13px 14px;
+
+    border: 0;
+    border-top: 1px solid var(--mp-border);
+
+    background: var(--mp-surface);
+
+    color: var(--mp-ink);
+
+    text-align: left;
+
+    cursor: pointer;
+}
+
+.mp-search-result:hover {
+    background: var(--surface-soft);
+}
+
+.mp-search-result-main {
+    display: flex;
+    flex-direction: column;
+
+    min-width: 0;
+
+    gap: 3px;
+}
+
+.mp-search-result-main strong {
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.mp-search-result-main span {
+    overflow: hidden;
+
+    color: var(--muted);
+
+    font-size: 11px;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mp-search-result-meta {
+    display: flex;
+
+    flex-wrap: wrap;
+    justify-content: flex-end;
+
+    gap: 5px;
+
+    color: var(--muted);
+
+    font-size: 9px;
+
+    white-space: nowrap;
+}
+
+.mp-search-result-meta span {
+    padding: 4px 6px;
+
+    background: var(--surface-soft);
+
+    border-radius: 5px;
+}
+
+@media (max-width: 700px) {
+
+    .mp-search-result {
+        align-items: flex-start;
+        flex-direction: column;
+
+        gap: 8px;
+    }
+
+    .mp-search-result-meta {
+        justify-content: flex-start;
+    }
+}
+
+/* =========================================================
+   CORPORATE ACTIONS + EVENTS
+========================================================= */
+
+.mp-actions-events-grid {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        minmax(0, 1fr);
+
+    gap: 20px;
+
+    margin-bottom: 20px;
+}
+
+.mp-actions-events-grid .mp-stock-card {
+    margin-bottom: 0;
+}
+
+
+/* =========================================================
+   CORPORATE ACTION DETAILS
+========================================================= */
+
+.mp-action-details {
+    min-width: 0;
+}
+
+.mp-action-details strong {
+    display: block;
+
+    color: var(--mp-ink);
+
+    font-size: 12px;
+    font-weight: 800;
+
+    line-height: 1.4;
+}
+
+.mp-action-dates {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 8px;
+
+    margin-top: 6px;
+
+    color: var(--muted);
+
+    font-size: 9px;
+}
+
+.mp-action-dates span {
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   EVENTS
+========================================================= */
+
+.mp-events-list {
+    display: flex;
+
+    flex-direction: column;
+}
+
+.mp-event-item {
+    display: grid;
+
+    grid-template-columns:
+        82px minmax(0, 1fr);
+
+    gap: 15px;
+
+    padding: 14px 0;
+
+    border-bottom: 1px solid #eeeae1;
+}
+
+.mp-event-item:last-child {
+    border-bottom: 0;
+}
+
+.mp-event-date {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    min-height: 38px;
+
+    padding: 7px 8px;
+
+    background: var(--mp-moss-light);
+
+    border-radius: 9px;
+
+    color: var(--mp-moss-dark);
+
+    text-align: center;
+}
+
+.mp-event-date strong {
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.mp-event-content {
+    min-width: 0;
+}
+
+.mp-event-type {
+    margin-bottom: 4px;
+
+    color: var(--mp-moss);
+
+    font-size: 9px;
+    font-weight: 900;
+
+    letter-spacing: 0.08em;
+
+    text-transform: uppercase;
+}
+
+.mp-event-subject {
+    color: var(--mp-ink);
+
+    font-size: 12px;
+    font-weight: 700;
+
+    line-height: 1.45;
+}
+
+.mp-event-broadcast {
+    margin-top: 5px;
+
+    color: var(--muted);
+
+    font-size: 9px;
+}
+
+
+/* =========================================================
+   RESULTS
+========================================================= */
+
+.mp-results-card {
+    margin-bottom: 20px;
+}
+
+.mp-results-table-wrapper {
+    width: 100%;
+
+    overflow-x: auto;
+}
+
+.mp-results-table {
+    width: 100%;
+
+    min-width: 650px;
+
+    border-collapse: collapse;
+
+    table-layout: fixed;
+}
+
+.mp-results-table th {
+    padding: 12px 10px;
+
+    background: var(--surface-soft);
+
+    border-bottom: 1px solid var(--mp-border);
+
+    color: var(--mp-ink);
+
+    font-size: 12px;
+    font-weight: 900;
+
+    text-align: center;
+}
+
+.mp-results-table th:first-child {
+    width: 170px;
+
+    text-align: left;
+}
+
+.mp-results-table td {
+    padding: 14px 10px;
+
+    border-bottom: 1px solid #eeeae1;
+
+    text-align: center;
+
+    vertical-align: middle;
+}
+
+.mp-results-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.mp-results-row-label {
+    color: var(--mp-ink);
+
+    font-size: 11px;
+    font-weight: 900;
+
+    text-align: left !important;
+}
+
+
+/* =========================================================
+   RESULT STATUS
+========================================================= */
+
+.mp-result-status {
+    display: inline-flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 4px;
+}
+
+.mp-result-status strong {
+    font-size: 13px;
+
+    font-weight: 900;
+}
+
+.mp-result-status small {
+    color: var(--muted);
+
+    font-size: 9px;
+}
+
+.mp-result-status.positive strong {
+    color: var(--mp-positive);
+}
+
+.mp-result-status.negative strong {
+    color: var(--mp-negative);
+}
+
+.mp-result-status.neutral strong {
+    color: var(--mp-neutral);
+}
+
+.mp-result-status.unavailable strong {
+    color: #aaa79e;
+
+    font-size: 17px;
+}
+
+
+/* =========================================================
+   RESULTS NOTE
+========================================================= */
+
+.mp-results-note {
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 7px;
+
+    margin-top: 14px;
+
+    padding-top: 12px;
+
+    border-top: 1px solid var(--mp-border);
+
+    color: var(--muted);
+
+    font-size: 10px;
+
+    line-height: 1.5;
+}
+
+.mp-results-note span {
+    color: var(--mp-moss-dark);
+
+    font-weight: 900;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 760px) {
+
+    .mp-actions-events-grid {
+        grid-template-columns: 1fr;
+
+        gap: 14px;
+    }
+
+    .mp-action-dates {
+        flex-direction: column;
+
+        gap: 3px;
+    }
+
+    .mp-event-item {
+        grid-template-columns:
+            72px minmax(0, 1fr);
+
+        gap: 10px;
+    }
+
+}
+
+@media (max-width: 480px) {
+
+    .mp-results-table {
+        min-width: 560px;
+    }
+
+}
